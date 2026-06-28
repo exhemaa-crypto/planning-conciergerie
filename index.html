@@ -1,0 +1,2311 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planning</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Planning">
+<meta name="theme-color" content="#0E2233">
+<link id="appleTouchIcon" rel="apple-touch-icon">
+<style>
+  :root{
+    --ink:#0E2233;
+    --steel:#5B7C8D;
+    --mist:#DCE6EA;
+    --cream:#F6F3EC;
+    --paper:#FFFFFF;
+    --gold:#C9A876;
+    --gold-soft:#E4D5B8;
+    --line:#E2DED4;
+    --good:#3F7350;
+    --good-bg:#EEF6F0;
+    --warn:#9C7A2E;
+    --warn-bg:#FBF6EB;
+    --shadow: 0 8px 24px -8px rgba(14,34,51,0.18);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    background:var(--cream);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{font-family:Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:-0.01em;}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+
+  /* ---------- Topbar ---------- */
+  .topbar{background:var(--ink);color:var(--cream);padding:0 32px;}
+  .topbar-inner{max-width:1320px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:72px;}
+  .brand{display:flex;align-items:center;gap:12px;font-family:Georgia,'Times New Roman',serif;font-size:1.15rem;letter-spacing:0.02em;}
+  .brand-mark{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--gold) 0%,var(--steel) 55%,var(--ink) 100%);flex:none;position:relative;overflow:hidden;}
+  .brand-mark::after{content:"";position:absolute;bottom:6px;left:-10%;width:120%;height:14px;background:rgba(246,243,236,0.35);border-radius:50%;transform:rotate(-3deg);}
+  .brand small{display:block;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-soft);margin-top:2px;}
+  .nav-links{display:flex;gap:28px;font-size:0.92rem;color:rgba(246,243,236,0.7);}
+  .nav-links a{padding:6px 0;border-bottom:2px solid transparent;transition:.2s;}
+  .nav-links a.active{color:var(--cream);border-color:var(--gold);}
+  .nav-links a:hover{color:var(--cream);}
+  .nav-actions{display:flex;gap:12px;align-items:center;}
+  .file-input{display:none;}
+
+  /* ---------- Hero ---------- */
+  .hero{position:relative;background:linear-gradient(180deg,rgba(14,34,51,0) 0%,rgba(14,34,51,0.0) 55%,var(--cream) 100%),linear-gradient(135deg,#1B3A4B 0%,#2C5066 45%,#3F6E84 78%,#C9A876 100%);color:var(--cream);overflow:hidden;}
+  .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 60% 40% at 80% 100%,rgba(201,168,118,0.35),transparent 70%),repeating-linear-gradient(transparent 0px,transparent 38px,rgba(255,255,255,0.04) 39px,rgba(255,255,255,0.04) 40px);mix-blend-mode:screen;opacity:.6;}
+  .hero-inner{position:relative;max-width:1320px;margin:0 auto;padding:48px 32px 64px;}
+  .hero-eyebrow{font-size:0.72rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold-soft);margin-bottom:14px;}
+  .hero h1{font-size:2.6rem;margin:0 0 10px;max-width:600px;line-height:1.1;}
+  .hero p{margin:0;max-width:520px;color:rgba(246,243,236,0.82);font-size:1rem;line-height:1.6;}
+  .hero-actions{margin-top:28px;display:flex;gap:14px;flex-wrap:wrap;}
+
+  /* ---------- Buttons ---------- */
+  .btn{border:none;border-radius:999px;padding:12px 24px;font-size:0.88rem;font-weight:600;letter-spacing:0.01em;display:inline-flex;align-items:center;gap:8px;transition:.2s ease;}
+  .btn-primary{background:var(--gold);color:var(--ink);}
+  .btn-primary:hover{background:#d8bd92;transform:translateY(-1px);}
+  .btn-ghost{background:rgba(246,243,236,0.08);color:var(--cream);border:1px solid rgba(246,243,236,0.35);}
+  .btn-ghost:hover{background:rgba(246,243,236,0.16);}
+  .btn-ghost.on-light{background:var(--cream);color:var(--ink);border:1px solid var(--line);}
+  .btn-ghost.on-light:hover{background:var(--mist);}
+  .btn-danger{background:#F6E6E4;color:#A6432F;}
+  .btn-danger:hover{background:#f0d6d2;}
+  .btn-sm{padding:8px 16px;font-size:0.8rem;}
+
+  /* ---------- Layout ---------- */
+  .layout{max-width:1320px;margin:0 auto;padding:0 32px 80px;display:grid;grid-template-columns:340px 1fr;gap:32px;margin-top:-32px;position:relative;z-index:2;}
+  @media(max-width:1080px){.layout{grid-template-columns:1fr;}}
+  .panel{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--line);}
+
+  /* ---------- Calendar ---------- */
+  .calendar-panel{padding:24px;}
+  .calendar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .calendar-head h2{font-size:1.15rem;margin:0;text-transform:capitalize;}
+  .cal-nav{display:flex;gap:6px;}
+  .cal-nav button{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--cream);color:var(--ink);font-size:0.95rem;display:flex;align-items:center;justify-content:center;transition:.15s;}
+  .cal-nav button:hover{background:var(--mist);}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:0.78rem;}
+  .cal-grid .dow{text-align:center;color:var(--steel);font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;padding-bottom:6px;}
+  .cal-day{aspect-ratio:1/1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--ink);position:relative;transition:.15s;border:1px solid transparent;}
+  .cal-day.muted{color:#C8C2B4;}
+  .cal-day.today{border-color:var(--ink);font-weight:700;}
+  .cal-day.selected{background:var(--ink);color:var(--cream);}
+  .cal-day:not(.muted):hover{background:var(--mist);cursor:pointer;}
+  .cal-day.selected:hover{background:var(--ink);}
+  .cal-day .dot-row{display:flex;gap:2px;}
+  .cal-day .dot{width:5px;height:5px;border-radius:50%;}
+  .dot-arr{background:#6FA37C;}
+  .dot-dep{background:var(--gold);}
+  .dot-svc{background:var(--steel);}
+  .dot-aut{background:#8A4A82;}
+  .cal-legend{margin-top:18px;display:flex;flex-direction:column;gap:8px;font-size:0.8rem;color:var(--ink);border-top:1px solid var(--line);padding-top:16px;}
+  .cal-legend .row{display:flex;align-items:center;gap:8px;}
+  .cal-legend .dot{width:8px;height:8px;border-radius:50%;}
+
+  /* ---------- Stats ---------- */
+  .stats-panel{padding:22px 24px;margin-top:24px;}
+  .stats-panel h3{font-size:0.95rem;margin:0 0 16px;}
+  .stat-row{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--line);font-size:0.88rem;}
+  .stat-row:last-child{border-bottom:none;padding-bottom:0;}
+  .stat-row .num{font-family:Georgia,'Times New Roman',serif;font-size:1.3rem;color:var(--ink);}
+  .stat-row .label{color:var(--steel);}
+
+  /* ---------- Import panel ---------- */
+  .import-panel{padding:22px 24px;margin-top:24px;}
+  .import-panel h3{font-size:0.95rem;margin:0 0 8px;}
+  .import-panel p{font-size:0.8rem;color:var(--steel);line-height:1.5;margin:0 0 14px;}
+  .import-row{display:flex;flex-direction:column;gap:10px;}
+  .import-status{font-size:0.78rem;margin-top:10px;padding:10px 12px;border-radius:10px;display:none;}
+  .import-status.show{display:block;}
+  .import-status.ok{background:var(--good-bg);color:var(--good);}
+  .import-status.err{background:#F6E6E4;color:#A6432F;}
+
+  /* ---------- Main column ---------- */
+  .main-col{display:flex;flex-direction:column;gap:24px;}
+  .toolbar{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--line);padding:18px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .search-box{flex:1;min-width:180px;display:flex;align-items:center;gap:10px;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--steel);font-size:0.88rem;}
+  .search-box input{border:none;background:none;outline:none;color:var(--ink);font-size:0.88rem;width:100%;font-family:inherit;}
+  .filter-chip{border:1px solid var(--line);background:var(--cream);border-radius:999px;padding:9px 16px;font-size:0.82rem;color:var(--ink);display:flex;align-items:center;gap:6px;transition:.15s;}
+  .filter-chip.active{background:var(--ink);color:var(--cream);border-color:var(--ink);}
+  .filter-chip:hover:not(.active){background:var(--mist);}
+  .owner-filter-wrap{display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--steel);}
+  .owner-filter-wrap select{border:1px solid var(--line);background:var(--cream);border-radius:999px;padding:8px 14px;font-size:0.82rem;color:var(--ink);font-family:inherit;outline:none;cursor:pointer;}
+
+  /* ---------- Day group / Event cards ---------- */
+  .day-group{margin-bottom:6px;}
+  .day-label{display:flex;align-items:baseline;gap:12px;margin:30px 0 14px;color:var(--ink);}
+  .day-group:first-child .day-label{margin-top:4px;}
+  .day-label .day-num{font-family:Georgia,'Times New Roman',serif;font-size:1.6rem;}
+  .day-label .day-meta{font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--steel);}
+  .day-label::after{content:"";flex:1;height:1px;background:var(--line);}
+  .day-label.today-label .day-num{color:var(--gold);}
+
+  .event-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 22px;display:grid;grid-template-columns:84px 1fr auto;gap:20px;align-items:center;margin-bottom:12px;transition:.18s ease;}
+  .event-card:hover{transform:translateY(-2px);box-shadow:0 14px 30px -10px rgba(14,34,51,0.22);border-color:var(--gold-soft);}
+  .event-time{display:flex;flex-direction:column;align-items:flex-start;border-right:1px solid var(--line);padding-right:18px;}
+  .event-time .t{font-family:Georgia,'Times New Roman',serif;font-size:1.25rem;color:var(--ink);}
+  .event-time .d{font-size:0.72rem;color:var(--steel);margin-top:2px;}
+  .event-body{display:flex;flex-direction:column;gap:6px;min-width:0;}
+  .event-title{font-family:Georgia,'Times New Roman',serif;font-size:1.08rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .tag{font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;font-weight:600;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;white-space:nowrap;}
+  .tag-arrivee{background:#E6F0E8;color:#3F7350;}
+  .tag-depart{background:#F6ECD9;color:#9C7A2E;}
+  .tag-service{background:#E6EDF1;color:#3E6478;}
+  .tag-autre{background:#F1E6F0;color:#8A4A82;}
+  .tag-ci{background:#E6F0E8;color:#3F7350;}
+  .tag-co{background:#F6ECD9;color:#9C7A2E;}
+  .event-meta{font-size:0.85rem;color:var(--steel);display:flex;gap:16px;flex-wrap:wrap;}
+  .event-meta span{display:flex;align-items:center;gap:5px;}
+  .event-actions{display:flex;align-items:center;gap:8px;}
+  .icon-btn{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--cream);display:flex;align-items:center;justify-content:center;color:var(--ink);transition:.15s;font-size:0.95rem;}
+  .icon-btn:hover{background:var(--mist);}
+  .source-pill{font-size:0.7rem;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--line);color:var(--steel);white-space:nowrap;}
+
+  /* ========== MOBILE ========== */
+  .bottom-nav{display:none;}
+
+  @media(max-width:768px){
+    /* Body padding pour bottom nav */
+    body{padding-bottom:70px;}
+
+    /* Topbar compact */
+    .topbar{padding:0 16px;}
+    .topbar-inner{height:54px;}
+    .brand small{display:none;}
+    .nav-links{display:none;}
+    .nav-actions .btn span{display:none;}
+    .nav-actions{gap:8px;}
+    .nav-actions .btn{padding:8px 12px;font-size:0.8rem;border-radius:10px;}
+
+    /* Hero compact */
+    .hero-inner{padding:24px 16px 36px;}
+    .hero h1{font-size:1.5rem;max-width:100%;}
+    .hero p{font-size:0.85rem;}
+    .hero-actions{gap:8px;margin-top:16px;}
+    .hero-actions .btn{padding:10px 16px;font-size:0.82rem;}
+    .hero-eyebrow{display:none;}
+
+    /* Layout */
+    .layout{padding:0 12px 24px;margin-top:-20px;gap:16px;}
+
+    /* Toolbar */
+    .toolbar{padding:12px;gap:8px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px;}
+    .toolbar::-webkit-scrollbar{display:none;}
+    .search-box{min-width:150px;}
+    .filter-chip{white-space:nowrap;flex-shrink:0;padding:8px 14px;font-size:0.78rem;}
+    .owner-filter-wrap{flex-shrink:0;}
+    .owner-filter-wrap select{font-size:0.78rem;padding:6px 10px;}
+
+    /* Event cards */
+    .event-card{grid-template-columns:1fr;padding:14px 16px;gap:12px;margin-bottom:10px;}
+    .event-time{border-right:none;border-bottom:1px solid var(--line);padding-right:0;padding-bottom:10px;flex-direction:row;align-items:baseline;gap:8px;}
+    .event-time .t{font-size:1.05rem;}
+    .event-actions{justify-content:flex-end;gap:6px;}
+    .event-title{font-size:0.95rem;}
+    .event-meta{font-size:0.78rem;gap:10px;}
+
+    /* Calendar panel */
+    .calendar-panel{padding:16px;}
+    .stats-panel{padding:16px;}
+    .import-panel{padding:16px;}
+
+    /* Modales plein écran */
+    .modal-overlay{padding:0;align-items:flex-end;}
+    .modal{
+      border-radius:20px 20px 0 0;
+      max-height:92vh;
+      width:100%;
+      max-width:100%;
+      padding:20px 16px 32px;
+    }
+    .modal h2{font-size:1.1rem;margin-bottom:16px;}
+    .form-grid{grid-template-columns:1fr;}
+    .modal-actions{flex-wrap:wrap;gap:8px;}
+    .modal-actions .btn{flex:1;justify-content:center;}
+
+    /* Day label */
+    .day-label{margin:20px 0 10px;}
+    .day-label .day-num{font-size:1.3rem;}
+
+    /* Owner cards */
+    .owner-card{padding:16px;}
+    .owner-card-head{flex-wrap:wrap;gap:8px;}
+
+    /* Bottom nav */
+    .bottom-nav{
+      display:flex;
+      position:fixed;
+      bottom:0;left:0;right:0;
+      background:var(--ink);
+      height:64px;
+      z-index:100;
+      border-top:1px solid rgba(255,255,255,0.1);
+      padding-bottom:env(safe-area-inset-bottom);
+    }
+    .bottom-nav a{
+      flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:3px;color:rgba(246,243,236,0.5);font-size:0.58rem;letter-spacing:0.05em;
+      text-transform:uppercase;text-decoration:none;transition:.15s;padding:8px 4px;
+    }
+    .bottom-nav a .icon{font-size:1.3rem;line-height:1;}
+    .bottom-nav a.active{color:var(--gold);}
+    .bottom-nav a:hover{color:var(--cream);}
+
+    /* Fab button */
+    .fab{
+      position:fixed;bottom:76px;right:16px;
+      width:52px;height:52px;border-radius:50%;
+      background:var(--gold);color:var(--ink);
+      border:none;font-size:1.5rem;font-weight:700;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 4px 16px rgba(14,34,51,0.3);
+      z-index:99;cursor:pointer;transition:.2s;
+    }
+    .fab:active{transform:scale(0.94);}
+
+    /* Hide desktop-only elements on mobile */
+    .hero-actions .btn:not(:first-child){display:none;}
+    .stats-panel,.import-panel:last-child{display:none;}
+  }
+
+  @media(min-width:769px){
+    .fab{display:none;}
+  }
+
+  /* ---------- Empty state ---------- */
+  .empty-state{background:var(--paper);border:1px dashed var(--line);border-radius:var(--radius);padding:60px 30px;text-align:center;color:var(--steel);}
+  .empty-state .display{color:var(--ink);font-size:1.3rem;margin-bottom:8px;}
+  .empty-state p{max-width:420px;margin:0 auto 22px;font-size:0.9rem;line-height:1.6;}
+  .empty-state .btn{margin:0 6px;}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{position:fixed;inset:0;background:rgba(14,34,51,0.45);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:var(--paper);border-radius:var(--radius);box-shadow:0 20px 60px -10px rgba(14,34,51,0.4);width:100%;max-width:540px;padding:28px;max-height:90vh;overflow:auto;}
+  .modal h2{font-size:1.3rem;margin:0 0 20px;}
+  .form-row{margin-bottom:14px;}
+  .form-row label{display:block;font-size:0.78rem;letter-spacing:0.05em;text-transform:uppercase;color:var(--steel);margin-bottom:6px;}
+  .form-row input,.form-row select,.form-row textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:0.92rem;font-family:inherit;color:var(--ink);background:var(--cream);}
+  .form-row textarea{resize:vertical;min-height:60px;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;}
+
+  /* CI/CO checkboxes */
+  .cico-row{display:flex;gap:20px;margin-top:4px;}
+  .cico-label{display:flex;align-items:center;gap:8px;font-size:0.88rem;color:var(--ink);cursor:pointer;user-select:none;}
+  .cico-label input[type=checkbox]{width:17px;height:17px;accent-color:var(--ink);cursor:pointer;flex:none;}
+  .cico-box{display:none;background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:4px;}
+  .cico-box.visible{display:block;}
+
+  /* Owner view */
+  .owner-card{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--line);padding:22px 24px;margin-bottom:16px;}
+  .owner-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;}
+  .owner-card-head h3{margin:0;font-size:1.15rem;}
+  .prop-row{padding:12px 0;border-bottom:1px solid var(--line);}
+  .prop-row:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>Planning <small>Gestion d'événements</small></div>
+    </div>
+    <nav class="nav-links">
+      <a href="#" class="tab-link active" data-tab="planning">Planning</a>
+      <a href="#" class="tab-link" data-tab="owners">Propriétaires</a>
+      <a href="#" class="tab-link" data-tab="properties">Propriétés</a>
+      <a href="#" class="tab-link" data-tab="prestataires">Prestataires</a>
+    </nav>
+    <div class="nav-actions">
+      <input type="file" id="importInput" class="file-input" accept=".csv,.ics">
+      <button class="btn btn-ghost" id="importTopBtn">📥 Importer</button>
+      <button class="btn btn-primary" id="newEventTopBtn">＋ Nouvel événement</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PLANNING VIEW ================= -->
+<!-- Bottom navigation (mobile) -->
+<nav class="bottom-nav" id="bottomNav">
+  <a href="#" class="tab-link active" data-tab="planning"><span class="icon">📅</span>Planning</a>
+  <a href="#" class="tab-link" data-tab="owners"><span class="icon">👤</span>Propriétaires</a>
+  <a href="#" class="tab-link" data-tab="properties"><span class="icon">🏠</span>Propriétés</a>
+  <a href="#" class="tab-link" data-tab="prestataires"><span class="icon">🔧</span>Prestataires</a>
+</nav>
+
+<!-- FAB button (mobile) -->
+<button class="fab" id="fabBtn">＋</button>
+
+<div id="view-planning">
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">Planning</div>
+      <h1>Vos événements, en un seul calendrier</h1>
+      <p>Ajoutez vos événements manuellement, ou importez un planning depuis un fichier CSV ou iCal (.ics).</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" id="newEventHeroBtn">＋ Nouvel événement</button>
+        <button class="btn btn-ghost" id="importHeroBtn">📥 Importer un fichier</button>
+        <button class="btn btn-ghost" id="exportBtn">⇩ Exporter (.ics)</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <aside>
+      <div class="panel calendar-panel">
+        <div class="calendar-head">
+          <h2 id="calMonthLabel">Mois</h2>
+          <div class="cal-nav">
+            <button id="calPrev">‹</button>
+            <button id="calToday" style="font-size:0.7rem;width:auto;padding:0 8px;">●</button>
+            <button id="calNext">›</button>
+          </div>
+        </div>
+        <div class="cal-grid" id="calGrid">
+          <div class="dow">L</div><div class="dow">M</div><div class="dow">M</div><div class="dow">J</div><div class="dow">V</div><div class="dow">S</div><div class="dow">D</div>
+        </div>
+        <div class="cal-legend">
+          <div class="row"><div class="dot dot-arr"></div> Arrivée</div>
+          <div class="row"><div class="dot dot-dep"></div> Départ</div>
+          <div class="row"><div class="dot dot-svc"></div> Ménage / Prestation</div>
+          <div class="row"><div class="dot dot-aut"></div> Autre</div>
+        </div>
+      </div>
+
+      <div class="panel stats-panel">
+        <h3>Vue d'ensemble</h3>
+        <div class="stat-row"><span class="label">Événements à venir</span><span class="num" id="statUpcoming">0</span></div>
+        <div class="stat-row"><span class="label">Aujourd'hui</span><span class="num" id="statToday">0</span></div>
+        <div class="stat-row"><span class="label">Cette semaine</span><span class="num" id="statWeek">0</span></div>
+        <div class="stat-row"><span class="label">Total événements</span><span class="num" id="statTotal">0</span></div>
+        <div class="stat-row"><span class="label">Sans logement lié</span><span class="num" id="statUnlinked">0</span></div>
+      </div>
+
+      <div class="panel import-panel">
+        <h3>Importer un planning</h3>
+        <p>Fichiers acceptés : CSV (.csv) ou iCal (.ics). Pour un fichier Excel, exportez-le d'abord en CSV.</p>
+        <div class="import-row">
+          <button class="btn btn-ghost on-light btn-sm" id="importPanelBtn">Choisir un fichier…</button>
+          <button class="btn btn-ghost on-light btn-sm" id="detectPropertiesBtn">🏠 Détecter les logements</button>
+          <button class="btn btn-ghost on-light btn-sm" id="reclassifyTypesBtn">🏷️ Recalculer les types (CI/CO/Ménage)</button>
+          <button class="btn btn-ghost on-light btn-sm" id="dedupeBtn">🧹 Supprimer les doublons</button>
+          <button class="btn btn-ghost on-light btn-sm" id="clearAllBtn">Effacer tous les événements</button>
+        </div>
+        <div class="import-status" id="importStatus"></div>
+      </div>
+
+      <div class="panel import-panel">
+        <h3>Sauvegarde des données</h3>
+        <p>Toutes vos données sont stockées dans ce navigateur. Exportez une sauvegarde avant de changer d'appareil ou de navigateur.</p>
+        <input type="file" id="backupInput" class="file-input" accept=".json">
+        <div class="import-row">
+          <button class="btn btn-ghost on-light btn-sm" id="exportBackupBtn">⇩ Exporter une sauvegarde (.json)</button>
+          <button class="btn btn-ghost on-light btn-sm" id="importBackupBtn">📥 Restaurer une sauvegarde</button>
+        </div>
+        <div class="import-status" id="backupStatus"></div>
+      </div>
+    </aside>
+
+    <main class="main-col">
+      <div class="toolbar">
+        <div class="search-box">
+          🔍
+          <input type="text" id="searchInput" placeholder="Rechercher un événement, un lieu…">
+        </div>
+        <button class="filter-chip active" data-filter="all">Tous</button>
+        <button class="filter-chip" data-filter="arrivee">Arrivées</button>
+        <button class="filter-chip" data-filter="depart">Départs</button>
+        <button class="filter-chip" data-filter="service">Ménages</button>
+        <button class="filter-chip" data-filter="autre">Autres</button>
+        <div class="owner-filter-wrap">
+          <span>👤</span>
+          <select id="ownerFilterSelect">
+            <option value="">Tous les propriétaires</option>
+          </select>
+        </div>
+      </div>
+      <div class="toolbar" style="gap:12px;">
+        <button class="filter-chip active" id="viewUpcoming">À venir</button>
+        <button class="filter-chip" id="viewMonth">Planning du mois</button>
+        <div id="monthPickerWrap" style="display:none;align-items:center;gap:8px;">
+          <label for="planningMonthPicker" style="font-size:0.82rem;color:var(--steel);">Mois :</label>
+          <input type="month" id="planningMonthPicker" style="border:1px solid var(--line);background:var(--cream);border-radius:999px;padding:8px 14px;font-size:0.82rem;color:var(--ink);font-family:inherit;outline:none;">
+        </div>
+      </div>
+      <div id="eventsContainer"></div>
+    </main>
+  </div>
+</div>
+
+<!-- ================= OWNERS VIEW ================= -->
+<div id="view-owners" style="display:none;">
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">Propriétaires</div>
+      <h1>Propriétaires &amp; logements</h1>
+      <p>Regroupez vos propriétaires et leurs logements, définissez le prix de ménage, puis exportez les missions du mois.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" id="newOwnerBtn">＋ Nouveau propriétaire</button>
+        <button class="btn btn-ghost" id="exportMonthBtn">⇩ Exporter les missions du mois (.csv)</button>
+      </div>
+    </div>
+  </div>
+  <div class="layout" style="grid-template-columns:1fr;">
+    <main class="main-col">
+      <div class="toolbar">
+        <div class="search-box">
+          🔍
+          <input type="text" id="ownerSearchInput" placeholder="Rechercher un propriétaire ou un logement…">
+        </div>
+        <button class="filter-chip active" data-view="logements">Propriétaires &amp; logements</button>
+        <button class="filter-chip" data-view="proprietaires">Propriétaires uniquement</button>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <label for="exportMonthPicker" style="font-size:0.82rem;color:var(--steel);">Mois à exporter :</label>
+          <input type="month" id="exportMonthPicker">
+        </div>
+      </div>
+      <div id="ownersContainer"></div>
+    </main>
+  </div>
+</div>
+
+<!-- ================= PROPERTIES VIEW ================= -->
+<div id="view-properties" style="display:none;">
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">Propriétés</div>
+      <h1>Tous les logements</h1>
+      <p>Retrouvez tous vos logements en un seul endroit, avec leurs informations détaillées : accès, WiFi, instructions de ménage, etc.</p>
+    </div>
+  </div>
+  <div class="layout" style="grid-template-columns:1fr;">
+    <main class="main-col">
+      <div class="toolbar">
+        <div class="search-box">
+          🔍
+          <input type="text" id="propSearchInput" placeholder="Rechercher un logement, une adresse…">
+        </div>
+        <div class="owner-filter-wrap">
+          <span>👤</span>
+          <select id="propOwnerFilter">
+            <option value="">Tous les propriétaires</option>
+          </select>
+        </div>
+      </div>
+      <div id="propertiesContainer"></div>
+    </main>
+  </div>
+</div>
+
+<!-- ================= PROPERTY DETAIL MODAL ================= -->
+<div class="modal-overlay" id="propDetailOverlay">
+  <div class="modal" style="max-width:620px;">
+    <h2 id="propDetailTitle">Détails du logement</h2>
+    <form id="propDetailForm">
+      <input type="hidden" id="propDetailId">
+      <input type="hidden" id="propDetailOwnerId">
+
+      <div style="font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--steel);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line);">Informations générales</div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="pdName">Nom du logement</label>
+          <input type="text" id="pdName" placeholder="Ex : Studio Lac">
+        </div>
+        <div class="form-row">
+          <label for="pdAddress">Adresse</label>
+          <input type="text" id="pdAddress" placeholder="Ex : 12 rue du Lac">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="pdCleaningPrice">Prix ménage (€)</label>
+          <input type="number" id="pdCleaningPrice" min="0" step="0.01" placeholder="Ex : 80">
+        </div>
+        <div class="form-row">
+          <label for="pdCapacity">Capacité (personnes)</label>
+          <input type="number" id="pdCapacity" min="1" placeholder="Ex : 4">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="pdBedrooms">Chambres</label>
+          <input type="number" id="pdBedrooms" min="0" placeholder="Ex : 2">
+        </div>
+        <div class="form-row">
+          <label for="pdFloor">Étage / situation</label>
+          <input type="text" id="pdFloor" placeholder="Ex : 2e étage, rez-de-jardin">
+        </div>
+      </div>
+
+      <div style="font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--steel);margin:16px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line);">Accès</div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="pdAccessCode">Code d'accès / Boîte à clés</label>
+          <input type="text" id="pdAccessCode" placeholder="Ex : 1234 ou boîte n°5">
+        </div>
+        <div class="form-row">
+          <label for="pdKeyLocation">Emplacement des clés</label>
+          <input type="text" id="pdKeyLocation" placeholder="Ex : Boîte à clés entrée gauche">
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="pdAccessInstructions">Instructions d'accès</label>
+        <textarea id="pdAccessInstructions" placeholder="Digicode portail, ascenseur, etc."></textarea>
+      </div>
+
+      <div style="font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--steel);margin:16px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line);">Équipements</div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="pdWifiName">Nom WiFi</label>
+          <input type="text" id="pdWifiName" placeholder="Ex : Box-Dupont">
+        </div>
+        <div class="form-row">
+          <label for="pdWifiPassword">Mot de passe WiFi</label>
+          <input type="text" id="pdWifiPassword" placeholder="Ex : monpassword123">
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="pdParking">Parking / stationnement</label>
+        <input type="text" id="pdParking" placeholder="Ex : Place n°12 en sous-sol, badge requis">
+      </div>
+
+      <div style="font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--steel);margin:16px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line);">Instructions ménage &amp; séjour</div>
+      <div class="form-row">
+        <label for="pdCleaningInstructions">Instructions de ménage</label>
+        <textarea id="pdCleaningInstructions" placeholder="Ex : Attention parquet fragile, aspirateur dans le placard du couloir…"></textarea>
+      </div>
+      <div class="form-row">
+        <label for="pdCheckinInstructions">Instructions check-in</label>
+        <textarea id="pdCheckinInstructions" placeholder="Ex : Remettre les clés à l'arrivée, montrer le fonctionnement du chauffage…"></textarea>
+      </div>
+      <div class="form-row">
+        <label for="pdCheckoutInstructions">Instructions check-out</label>
+        <textarea id="pdCheckoutInstructions" placeholder="Ex : Laisser les clés sur le plan de travail, fermer les volets…"></textarea>
+      </div>
+      <div class="form-row">
+        <label for="pdNotes">Notes diverses</label>
+        <textarea id="pdNotes" placeholder="Informations supplémentaires, contacts d'urgence…"></textarea>
+      </div>
+
+      <div style="font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--steel);margin:16px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line);">Photos</div>
+      <div id="photoPreviewList" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;"></div>
+      <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;background:var(--cream);border:1px dashed var(--line);border-radius:10px;padding:10px 16px;font-size:0.85rem;color:var(--steel);">
+        📷 Ajouter des photos
+        <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
+      </label>
+      <div style="font-size:0.75rem;color:var(--steel);margin-top:6px;">Les photos sont redimensionnées et stockées localement dans votre navigateur.</div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost on-light btn-sm" id="cancelPropDetailBtn">Annuler</button>
+        <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= PRESTATAIRES VIEW ================= -->
+<div id="view-prestataires" style="display:none;">
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">Prestataires</div>
+      <h1>Prestataires &amp; missions</h1>
+      <p>Gérez vos prestataires, assignez-leur des missions et envoyez-leur leur planning.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" id="newPrestaBtn">＋ Nouveau prestataire</button>
+      </div>
+    </div>
+  </div>
+  <div class="layout" style="grid-template-columns:1fr;">
+    <main class="main-col">
+      <div class="toolbar">
+        <div class="search-box">
+          🔍
+          <input type="text" id="prestaSearchInput" placeholder="Rechercher un prestataire…">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <label for="prestaMoisPicker" style="font-size:0.82rem;color:var(--steel);">Mois :</label>
+          <input type="month" id="prestaMoisPicker" style="border:1px solid var(--line);background:var(--cream);border-radius:10px;padding:8px 12px;font-size:0.82rem;color:var(--ink);font-family:inherit;outline:none;">
+        </div>
+      </div>
+      <div id="prestatairesContainer"></div>
+    </main>
+  </div>
+</div>
+
+<!-- ================= PRESTATAIRE MODAL ================= -->
+<div class="modal-overlay" id="prestaModalOverlay">
+  <div class="modal">
+    <h2 id="prestaModalTitle">Nouveau prestataire</h2>
+    <form id="prestaForm">
+      <input type="hidden" id="prestaId">
+      <div class="form-row">
+        <label for="prestaName">Nom / Prénom</label>
+        <input type="text" id="prestaName" required placeholder="Ex : Marie Dupont">
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="prestaPhone">Téléphone</label>
+          <input type="text" id="prestaPhone" placeholder="06 00 00 00 00">
+        </div>
+        <div class="form-row">
+          <label for="prestaEmail">Email</label>
+          <input type="email" id="prestaEmail" placeholder="marie@example.com">
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="prestaSpecialty">Spécialité</label>
+        <input type="text" id="prestaSpecialty" placeholder="Ex : Ménage, Linge, Check-in…">
+      </div>
+      <div class="form-row">
+        <label for="prestaNotes">Notes</label>
+        <textarea id="prestaNotes" placeholder="Informations complémentaires…"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger btn-sm" id="deletePrestaBtn" style="display:none;">Supprimer</button>
+        <button type="button" class="btn btn-ghost on-light btn-sm" id="cancelPrestaBtn">Annuler</button>
+        <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= MISSION SHEET MODAL ================= -->
+<div class="modal-overlay" id="missionSheetOverlay">
+  <div class="modal" style="max-width:660px;">
+    <h2 id="missionSheetTitle">Fiche de mission</h2>
+    <div id="missionSheetContent" style="font-size:0.9rem;line-height:1.7;"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost on-light btn-sm" id="closeMissionSheetBtn">Fermer</button>
+      <button type="button" class="btn btn-ghost on-light btn-sm" id="printMissionSheetBtn">🖨 Imprimer</button>
+      <button type="button" class="btn btn-primary btn-sm" id="exportMissionSheetBtn">⇩ Exporter (.csv)</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= EVENT MODAL ================= -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">Nouvel événement</h2>
+    <form id="eventForm">
+      <input type="hidden" id="eventId">
+      <div class="form-row">
+        <label for="eventTitle">Titre</label>
+        <input type="text" id="eventTitle" required placeholder="Ex : Ménage — Appartement Rive Gauche">
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="eventDate">Date</label>
+          <input type="date" id="eventDate" required>
+        </div>
+        <div class="form-row">
+          <label for="eventTime">Heure</label>
+          <input type="time" id="eventTime">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="eventType">Type</label>
+          <select id="eventType">
+            <option value="arrivee">Arrivée (Check-in)</option>
+            <option value="depart">Départ (Check-out)</option>
+            <option value="service">Ménage / Prestation</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="eventProperty">Logement (optionnel)</label>
+          <select id="eventProperty">
+            <option value="">— Aucun / saisie libre —</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="eventLocation">Lieu / Adresse</label>
+        <input type="text" id="eventLocation" placeholder="Adresse / propriété">
+      </div>
+      <div class="form-row">
+        <label id="eventPriceLabel">Prix (€)</label>
+        <input type="number" id="eventPrice" min="0" step="0.01" placeholder="Laisser vide pour le prix par défaut (18 €)">
+      </div>
+
+      <div class="form-row" id="prestaFieldRow" style="display:none;">
+        <label for="eventPresta">Prestataire assigné</label>
+        <select id="eventPresta">
+          <option value="">— Aucun —</option>
+        </select>
+      </div>
+
+      <!-- CI/CO sur un ménage -->
+      <div class="cico-box" id="cicoBox">
+        <label style="display:block;font-size:0.78rem;letter-spacing:0.05em;text-transform:uppercase;color:var(--steel);margin-bottom:10px;">Ce ménage est accompagné d'un :</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div>
+            <label class="cico-label" style="margin-bottom:8px;">
+              <input type="checkbox" id="eventHasCi"> Check-in (arrivée)
+            </label>
+            <div id="ciDateWrap" style="display:none;margin-top:6px;">
+              <label style="font-size:0.74rem;color:var(--steel);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Date du check-in</label>
+              <input type="date" id="eventCiDate" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:0.88rem;font-family:inherit;color:var(--ink);background:var(--cream);">
+              <label style="font-size:0.74rem;color:var(--steel);text-transform:uppercase;letter-spacing:0.05em;display:block;margin:6px 0 4px;">Heure</label>
+              <input type="time" id="eventCiTime" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:0.88rem;font-family:inherit;color:var(--ink);background:var(--cream);">
+              <label style="font-size:0.74rem;color:var(--steel);text-transform:uppercase;letter-spacing:0.05em;display:block;margin:6px 0 4px;">Prix check-in (€)</label>
+              <input type="number" id="eventCiPrice" min="0" step="0.01" placeholder="Ex : 18" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:0.88rem;font-family:inherit;color:var(--ink);background:var(--cream);">
+              <label class="cico-label" style="margin-top:8px;font-size:0.8rem;">
+                <input type="checkbox" id="eventCiExport"> Inclure dans l'export
+              </label>
+            </div>
+          </div>
+          <div>
+            <label class="cico-label" style="margin-bottom:8px;">
+              <input type="checkbox" id="eventHasCo"> Check-out (départ)
+            </label>
+            <div id="coDateWrap" style="display:none;margin-top:6px;">
+              <label style="font-size:0.74rem;color:var(--steel);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Date du check-out</label>
+              <input type="date" id="eventCoDate" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:0.88rem;font-family:inherit;color:var(--ink);background:var(--cream);">
+              <label style="font-size:0.74rem;color:var(--steel);text-transform:uppercase;letter-spacing:0.05em;display:block;margin:6px 0 4px;">Heure</label>
+              <input type="time" id="eventCoTime" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:0.88rem;font-family:inherit;color:var(--ink);background:var(--cream);">
+              <label style="font-size:0.74rem;color:var(--steel);text-transform:uppercase;letter-spacing:0.05em;display:block;margin:6px 0 4px;">Prix check-out (€)</label>
+              <input type="number" id="eventCoPrice" min="0" step="0.01" placeholder="Ex : 18" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:0.88rem;font-family:inherit;color:var(--ink);background:var(--cream);">
+              <label class="cico-label" style="margin-top:8px;font-size:0.8rem;">
+                <input type="checkbox" id="eventCoExport"> Inclure dans l'export
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label for="eventDetails">Notes</label>
+        <textarea id="eventDetails" placeholder="Notes, contact, instructions…"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger btn-sm" id="deleteEventBtn" style="display:none;">Supprimer</button>
+        <button type="button" class="btn btn-ghost on-light btn-sm" id="cancelEventBtn">Annuler</button>
+        <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= OWNER MODAL ================= -->
+<div class="modal-overlay" id="ownerModalOverlay">
+  <div class="modal">
+    <h2 id="ownerModalTitle">Nouveau propriétaire</h2>
+    <form id="ownerForm">
+      <input type="hidden" id="ownerId">
+      <div class="form-row">
+        <label for="ownerName">Nom du propriétaire</label>
+        <input type="text" id="ownerName" required placeholder="Ex : M. et Mme Dupont">
+      </div>
+      <div class="form-row">
+        <label for="ownerContact">Contact (optionnel)</label>
+        <input type="text" id="ownerContact" placeholder="Email / téléphone">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger btn-sm" id="deleteOwnerBtn" style="display:none;">Supprimer</button>
+        <button type="button" class="btn btn-ghost on-light btn-sm" id="cancelOwnerBtn">Annuler</button>
+        <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= PROPERTY MODAL ================= -->
+<div class="modal-overlay" id="propertyModalOverlay">
+  <div class="modal">
+    <h2 id="propertyModalTitle">Nouveau logement</h2>
+    <form id="propertyForm">
+      <input type="hidden" id="propertyId">
+      <input type="hidden" id="propertyOwnerId">
+      <div class="form-row">
+        <label for="propertyName">Nom de l'appartement</label>
+        <input type="text" id="propertyName" required placeholder="Ex : Appartement Rive Gauche, Studio Lac…">
+      </div>
+      <div class="form-row">
+        <label for="propertyAddress">Adresse</label>
+        <input type="text" id="propertyAddress" required placeholder="Ex : 12 chemin des Vignes, Annecy">
+      </div>
+      <div class="form-row">
+        <label for="propertyCleaningPrice">Prix du ménage (€)</label>
+        <input type="number" id="propertyCleaningPrice" min="0" step="0.01" placeholder="Ex : 80">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger btn-sm" id="deletePropertyBtn" style="display:none;">Supprimer</button>
+        <button type="button" class="btn btn-ghost on-light btn-sm" id="cancelPropertyBtn">Annuler</button>
+        <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= ASSIGN MODAL ================= -->
+<div class="modal-overlay" id="assignModalOverlay">
+  <div class="modal">
+    <h2>Nouveau logement détecté</h2>
+    <p style="font-size:0.88rem;color:var(--steel);line-height:1.5;margin:-6px 0 18px;">
+      L'adresse <strong id="assignAddress" style="color:var(--ink);"></strong> a été détectée dans
+      <span id="assignCount"></span> événement(s). À quel propriétaire appartient ce logement ?
+    </p>
+    <form id="assignForm">
+      <div class="form-row">
+        <label for="assignOwnerSelect">Propriétaire</label>
+        <select id="assignOwnerSelect"></select>
+      </div>
+      <div class="form-row" id="assignNewOwnerRow">
+        <label for="assignNewOwnerName">Nom du nouveau propriétaire</label>
+        <input type="text" id="assignNewOwnerName" placeholder="Ex : M. et Mme Dupont">
+      </div>
+      <div class="form-row">
+        <label for="assignPropertyAddress">Adresse du logement</label>
+        <input type="text" id="assignPropertyAddress" required>
+      </div>
+      <div class="form-row">
+        <label for="assignCleaningPrice">Prix du ménage (€)</label>
+        <input type="number" id="assignCleaningPrice" min="0" step="0.01" placeholder="Ex : 80">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost on-light btn-sm" id="assignSkipBtn">Ignorer</button>
+        <button type="submit" class="btn btn-primary btn-sm">Associer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const STORAGE_KEY   = "planning_v2_events";
+  const OWNERS_KEY    = "planning_v2_owners";
+  const PRESTA_KEY    = "planning_v2_prestataires";
+  const TYPE_LABELS   = {arrivee:"Arrivée",depart:"Départ",service:"Ménage",autre:"Autre"};
+  const TYPE_DOT      = {arrivee:"dot-arr",depart:"dot-dep",service:"dot-svc",autre:"dot-aut"};
+  const MONTHS        = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+  const DAYS_FULL     = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+  const DEFAULT_PRICE = 18;
+
+  let events         = load(STORAGE_KEY, []);
+  let owners         = load(OWNERS_KEY,  []);
+  let prestataires   = load(PRESTA_KEY,  []);
+  let prestaSearch   = "";
+  let currentMissionPrestaId = null;
+  let currentFilter  = "all";
+  let planningView   = "upcoming"; // "upcoming" | "month"
+  let planningMonth  = "";
+  let ownerFilter    = "";   // owner id or ""
+  let searchTerm     = "";
+  let ownerSearchTerm= "";
+  let ownerViewMode = "logements"; // "logements" | "proprietaires"
+  let calViewDate    = new Date();
+  let selectedDate   = null;
+  let assignmentQueue= [];
+
+  // ---------- Storage ----------
+  function load(key, def){ try{ const r=localStorage.getItem(key); return r?JSON.parse(r):def; }catch(e){return def;} }
+  function save(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+  function saveEvents(){ save(STORAGE_KEY, events); }
+  function saveOwners(){ save(OWNERS_KEY,  owners); }
+  function savePrestas(){ save(PRESTA_KEY, prestataires); }
+
+  // ---------- CRUD Prestataires ----------
+  function addPresta(d){ const p={id:uid(),name:d.name,phone:d.phone||'',email:d.email||'',specialty:d.specialty||'',notes:d.notes||''}; prestataires.push(p); savePrestas(); return p; }
+  function updatePresta(id,d){ const i=prestataires.findIndex(p=>p.id===id); if(i>-1){prestataires[i]=Object.assign({},prestataires[i],d);savePrestas();} }
+  function deletePresta(id){ prestataires=prestataires.filter(p=>p.id!==id); events.forEach(e=>{if(e.prestaId===id){e.prestaId=null;}}); savePrestas(); saveEvents(); }
+  function findPrestaById(id){ return prestataires.find(p=>p.id===id)||null; }
+
+  // ---------- Utils ----------
+  function uid(){ return 'ev_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+  function pad(n){ return n.toString().padStart(2,'0'); }
+  function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+  function dateOnly(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+
+  function parseLooseDate(v){
+    if(v==null||v==="") return null;
+    if(typeof v==="number"){ const e=new Date(Date.UTC(1899,11,30)); return dateOnly(new Date(e.getTime()+v*86400000)); }
+    const s=String(v).trim(), m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+    if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+    if(m){ const[,d1,d2,y]=[...m].map(Number); return y+"-"+pad(d2)+"-"+pad(d1); }
+    const d=new Date(s); return isNaN(d)?null:dateOnly(d);
+  }
+  function parseLooseTime(v){
+    if(v==null||v==="") return "";
+    if(typeof v==="number"){ const t=Math.round(v*24*60); return pad(Math.floor(t/60)%24)+":"+pad(t%60); }
+    const s=String(v).trim(), m=s.match(/^(\d{1,2}):(\d{2})/)||s.match(/^(\d{1,2})h(\d{2})?/i);
+    if(m) return pad(parseInt(m[1],10))+":"+(m[2]||"00");
+    return "";
+  }
+  function guessType(text){
+    let t=(text||"").trim().replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\s]+/u,'');
+    if(/^CO\b/i.test(t)) return "depart";
+    if(/^CI\b/i.test(t)) return "arrivee";
+    if(/^Cleaning\b/i.test(t)||/^m[ée]nage\b/i.test(t)) return "service";
+    const lt=t.toLowerCase();
+    if(/arriv|check[\s-]?in|entrée|entree/.test(lt)) return "arrivee";
+    if(/d[ée]part|check[\s-]?out|sortie/.test(lt)) return "depart";
+    if(/m[ée]nage|entretien|prestation|maintenance|service|nettoyage/.test(lt)) return "service";
+    return "autre";
+  }
+  function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+  function normalizeAddr(s){ return String(s||'').toLowerCase().trim().replace(/\s+/g,' '); }
+  function formatPrice(v){ return (Number(v)||0).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
+  function formatPriceCSV(v){ return (Number(v)||0).toFixed(2).replace('.',','); }
+  function formatDateFR(d){ const x=new Date(d+"T00:00:00"); return pad(x.getDate())+"/"+pad(x.getMonth()+1)+"/"+x.getFullYear(); }
+
+  // ---------- CRUD Events ----------
+  function addEvent(ev){ ev.id=ev.id||uid(); events.push(ev); saveEvents(); }
+  function updateEvent(id,data){ const i=events.findIndex(e=>e.id===id); if(i>-1){events[i]=Object.assign({},events[i],data);saveEvents();} }
+  function deleteEvent(id){ events=events.filter(e=>e.id!==id); saveEvents(); }
+  function clearAll(){ events=[]; saveEvents(); }
+
+  // ---------- CRUD Owners ----------
+  function addOwner(data){ const o={id:uid(),name:data.name,contact:data.contact||'',properties:[]}; owners.push(o); saveOwners(); return o; }
+  function updateOwner(id,data){ const i=owners.findIndex(o=>o.id===id); if(i>-1){owners[i]=Object.assign({},owners[i],data);saveOwners();} }
+  function deleteOwner(id){ owners=owners.filter(o=>o.id!==id); saveOwners(); }
+  function addProperty(ownerId,data){ const o=owners.find(o=>o.id===ownerId); if(!o) return null; const p={id:uid(),name:data.name||'',address:data.address,cleaningPrice:data.cleaningPrice||0}; o.properties.push(p); saveOwners(); return p; }
+  function updateProperty(ownerId,propId,data){ const o=owners.find(o=>o.id===ownerId); if(!o) return; const i=o.properties.findIndex(p=>p.id===propId); if(i>-1){o.properties[i]=Object.assign({},o.properties[i],data);saveOwners();} }
+  function deleteProperty(ownerId,propId){ const o=owners.find(o=>o.id===ownerId); if(!o) return; o.properties=o.properties.filter(p=>p.id!==propId); saveOwners(); }
+  function findPropertyById(propId){ for(const o of owners){ const p=o.properties.find(p=>p.id===propId); if(p) return {owner:o,property:p}; } return null; }
+  function findPropertyByAddress(addr){ const t=normalizeAddr(addr); for(const o of owners){ const p=o.properties.find(p=>normalizeAddr(p.address)===t); if(p) return {owner:o,property:p}; } return null; }
+  function getOwnerIdForEvent(ev){ if(!ev.propertyId) return null; const f=findPropertyById(ev.propertyId); return f?f.owner.id:null; }
+
+  function getEventPrice(ev){
+    if(ev.price!=null&&ev.price!=='') return Number(ev.price)||0;
+    if(ev.type==='service'&&ev.propertyId){ const f=findPropertyById(ev.propertyId); if(f) return Number(f.property.cleaningPrice)||0; }
+    if(ev.type==='arrivee'||ev.type==='depart') return DEFAULT_PRICE;
+    return 0;
+  }
+
+  // ---------- Owner filter dropdown ----------
+  function refreshOwnerFilterSelect(){
+    const sel=document.getElementById('ownerFilterSelect');
+    const prev=sel.value;
+    sel.innerHTML='<option value="">Tous les propriétaires</option>';
+    owners.forEach(o=>{ const opt=document.createElement('option'); opt.value=o.id; opt.textContent=o.name; sel.appendChild(opt); });
+    if(prev) sel.value=prev;
+    ownerFilter=sel.value;
+  }
+  document.getElementById('ownerFilterSelect').addEventListener('change',(e)=>{ ownerFilter=e.target.value; renderEvents(); });
+
+  // ---------- Stats ----------
+  function renderStats(){
+    const today=todayStr(), now=new Date(), we=new Date(now); we.setDate(now.getDate()+7);
+    const ws=dateOnly(we);
+    document.getElementById('statUpcoming').textContent=events.filter(e=>e.date>=today).length;
+    document.getElementById('statToday').textContent=events.filter(e=>e.date===today).length;
+    document.getElementById('statWeek').textContent=events.filter(e=>e.date>=today&&e.date<=ws).length;
+    document.getElementById('statTotal').textContent=events.length;
+    document.getElementById('statUnlinked').textContent=events.filter(e=>['arrivee','depart','service'].includes(e.type)&&!e.propertyId).length;
+  }
+
+  // ---------- Calendar ----------
+  function renderCalendar(){
+    const grid=document.getElementById('calGrid');
+    while(grid.children.length>7) grid.removeChild(grid.lastChild);
+    const year=calViewDate.getFullYear(), month=calViewDate.getMonth();
+    document.getElementById('calMonthLabel').textContent=MONTHS[month]+" "+year;
+    const first=new Date(year,month,1), offset=(first.getDay()+6)%7, dim=new Date(year,month+1,0).getDate(), dipm=new Date(year,month,0).getDate();
+    const today=todayStr(), dateTypes={};
+    events.forEach(e=>{ if(!e.date) return; if(!dateTypes[e.date]) dateTypes[e.date]=new Set(); dateTypes[e.date].add(e.type); });
+    const cells=[];
+    for(let i=offset;i>0;i--) cells.push({day:dipm-i+1,muted:true,dateStr:null});
+    for(let d=1;d<=dim;d++) cells.push({day:d,muted:false,dateStr:year+"-"+pad(month+1)+"-"+pad(d)});
+    let next=1; while(cells.length%7!==0) cells.push({day:next++,muted:true,dateStr:null});
+    cells.forEach(c=>{
+      const div=document.createElement('div');
+      div.className='cal-day'+(c.muted?' muted':'')+((!c.muted&&c.dateStr===today)?' today':'')+((!c.muted&&c.dateStr===selectedDate)?' selected':'');
+      const num=document.createElement('div'); num.textContent=c.day; div.appendChild(num);
+      if(!c.muted&&dateTypes[c.dateStr]){
+        const row=document.createElement('div'); row.className='dot-row';
+        Array.from(dateTypes[c.dateStr]).slice(0,4).forEach(t=>{ const dot=document.createElement('div'); dot.className='dot '+(TYPE_DOT[t]||'dot-aut'); row.appendChild(dot); });
+        div.appendChild(row);
+      }
+      if(!c.muted) div.addEventListener('click',()=>{ selectedDate=(selectedDate===c.dateStr)?null:c.dateStr; renderCalendar(); renderEvents(); });
+      grid.appendChild(div);
+    });
+  }
+
+  // ---------- Events list ----------
+  function getFilteredEvents(){
+    const today=todayStr();
+    let list;
+    if(selectedDate){
+      list=events.filter(e=>e.date===selectedDate);
+    } else if(planningView==='month'&&planningMonth){
+      list=events.filter(e=>e.date&&e.date.startsWith(planningMonth));
+    } else {
+      list=events.filter(e=>e.date>=today);
+    }
+    if(currentFilter!=='all') list=list.filter(e=>e.type===currentFilter);
+    if(ownerFilter) list=list.filter(e=>getOwnerIdForEvent(e)===ownerFilter);
+    if(searchTerm){ const s=searchTerm.toLowerCase(); list=list.filter(e=>(e.title||'').toLowerCase().includes(s)||(e.location||'').toLowerCase().includes(s)||(e.details||'').toLowerCase().includes(s)); }
+    return list.sort((a,b)=> a.date!==b.date?(a.date<b.date?-1:1):((a.time||'')<(b.time||'')?-1:((a.time||'')>(b.time||'')?1:0)));
+  }
+
+  function renderEvents(){
+    const container=document.getElementById('eventsContainer');
+    container.innerHTML='';
+    const list=getFilteredEvents();
+
+    if(events.length===0){
+      container.innerHTML=`<div class="empty-state"><div class="display">Aucun événement pour le moment</div><p>Commencez par ajouter un événement ou importez un planning CSV / iCal.</p><button class="btn btn-primary" id="emptyAddBtn">＋ Nouvel événement</button> <button class="btn btn-ghost on-light" id="emptyImportBtn">📥 Importer un fichier</button></div>`;
+      document.getElementById('emptyAddBtn').addEventListener('click',()=>openModal());
+      document.getElementById('emptyImportBtn').addEventListener('click',()=>document.getElementById('importInput').click());
+      return;
+    }
+    if(list.length===0){
+      container.innerHTML=`<div class="empty-state"><div class="display">Aucun résultat</div><p>Aucun événement ne correspond à ces critères.</p></div>`;
+      return;
+    }
+
+    const today=todayStr(); let lastDate=null;
+    list.forEach(ev=>{
+      if(ev.date!==lastDate){
+        lastDate=ev.date;
+        const d=new Date(ev.date+"T00:00:00");
+        const group=document.createElement('div'); group.className='day-group';
+        const label=document.createElement('div');
+        label.className='day-label'+(ev.date===today?' today-label':'');
+        let meta=capitalize(DAYS_FULL[d.getDay()])+" "+d.getDate()+" "+MONTHS[d.getMonth()]+" "+d.getFullYear();
+        if(ev.date===today) meta="Aujourd'hui · "+meta;
+        label.innerHTML=`<span class="day-num">${d.getDate()}</span><span class="day-meta">${meta}</span>`;
+        group.appendChild(label);
+        container.appendChild(group);
+      }
+      container.lastChild.appendChild(buildEventCard(ev));
+    });
+  }
+
+  function buildEventCard(ev){
+    const card=document.createElement('div'); card.className='event-card';
+
+    // Time column
+    const time=document.createElement('div'); time.className='event-time';
+    time.innerHTML=`<span class="t">${ev.time||'—'}</span><span class="d">${TYPE_LABELS[ev.type]||'Autre'}</span>`;
+
+    // Body
+    const body=document.createElement('div'); body.className='event-body';
+    const tagClass='tag-'+(ev.type||'autre');
+    let metaHtml='';
+    if(ev.location) metaHtml+=`<span>📍 ${escapeHtml(ev.location)}</span>`;
+    if(ev.propertyId){ const f=findPropertyById(ev.propertyId); if(f) metaHtml+=`<span>👤 ${escapeHtml(f.owner.name)}</span>`; }
+    if(['arrivee','depart','service'].includes(ev.type)){
+      const price=getEventPrice(ev);
+      if(price>0||ev.price!=null){
+        const lbl=ev.type==='service'?'Ménage':'Prix';
+        const mark=(ev.price!=null)?' ✎':'';
+        metaHtml+=`<span>💶 ${lbl} : ${formatPrice(price)}${mark}</span>`;
+      }
+    }
+    // CI/CO badges on cleaning
+    if(ev.type==='service'){
+      if(ev.hasCi){
+        const d=ev.ciDate?formatDateFR(ev.ciDate):'';
+        const t=ev.ciTime?' '+ev.ciTime:'';
+        const p=ev.ciPrice!=null?' · '+formatPrice(ev.ciPrice):'';
+        metaHtml+=`<span class="tag tag-ci">✓ Check-in${d?' — '+d+t:''}${p}</span>`;
+      }
+      if(ev.hasCo){
+        const d=ev.coDate?formatDateFR(ev.coDate):'';
+        const t=ev.coTime?' '+ev.coTime:'';
+        const p=ev.coPrice!=null?' · '+formatPrice(ev.coPrice):'';
+        metaHtml+=`<span class="tag tag-co">✓ Check-out${d?' — '+d+t:''}${p}</span>`;
+      }
+    }
+    if(ev.prestaId){ const pr=findPrestaById(ev.prestaId); if(pr) metaHtml+=`<span>🔧 ${escapeHtml(pr.name)}</span>`; }
+    if(ev.details) metaHtml+=`<span>📝 ${escapeHtml(ev.details)}</span>`;
+    body.innerHTML=`<div class="event-title">${escapeHtml(ev.title)} <span class="tag ${tagClass}">${TYPE_LABELS[ev.type]||'Autre'}</span></div><div class="event-meta">${metaHtml}</div>`;
+
+    // Actions
+    const actions=document.createElement('div'); actions.className='event-actions';
+    if(ev.source){ const pill=document.createElement('span'); pill.className='source-pill'; pill.textContent=ev.source; actions.appendChild(pill); }
+    const editBtn=document.createElement('div'); editBtn.className='icon-btn'; editBtn.title='Modifier'; editBtn.textContent='✎';
+    editBtn.addEventListener('click',()=>openModal(ev)); actions.appendChild(editBtn);
+    const delBtn=document.createElement('div'); delBtn.className='icon-btn'; delBtn.title='Supprimer'; delBtn.textContent='🗑';
+    delBtn.addEventListener('click',()=>{ if(confirm('Supprimer cet événement ?')){ deleteEvent(ev.id); renderAll(); } });
+    actions.appendChild(delBtn);
+
+    card.appendChild(time); card.appendChild(body); card.appendChild(actions);
+    return card;
+  }
+
+  function renderAll(){ renderStats(); renderCalendar(); renderEvents(); renderOwners(); renderPrestataires(); refreshOwnerFilterSelect(); }
+
+  // ---------- Event Modal ----------
+  const overlay=document.getElementById('modalOverlay');
+
+  function openModal(ev){
+    document.getElementById('modalTitle').textContent=ev?"Modifier l'événement":'Nouvel événement';
+    document.getElementById('eventId').value=ev?ev.id:'';
+    document.getElementById('eventTitle').value=ev?ev.title:'';
+    document.getElementById('eventDate').value=ev?ev.date:(selectedDate||todayStr());
+    document.getElementById('eventTime').value=ev?(ev.time||''):'';
+    document.getElementById('eventType').value=ev?ev.type:'service';
+    populatePropertySelect(ev?ev.propertyId:'');
+    document.getElementById('eventLocation').value=ev?(ev.location||''):'';
+    document.getElementById('eventPrice').value=(ev&&ev.price!=null)?ev.price:'';
+    const hasCi=!!(ev&&ev.hasCi), hasCo=!!(ev&&ev.hasCo);
+    const prestaId=ev?ev.prestaId||'':'';
+    populatePrestaSelect(prestaId);
+    document.getElementById('eventPresta').value=prestaId;
+    document.getElementById('prestaFieldRow').style.display=(ev&&ev.type==='service')||(!ev)?'block':'none';
+    document.getElementById('eventHasCi').checked=hasCi;
+    document.getElementById('ciDateWrap').style.display=hasCi?'block':'none';
+    document.getElementById('eventCiDate').value=ev?(ev.ciDate||ev.date||''):'';
+    document.getElementById('eventCiTime').value=ev?(ev.ciTime||''):'';
+    document.getElementById('eventCiPrice').value=(ev&&ev.ciPrice!=null)?ev.ciPrice:'';
+    document.getElementById('eventCiExport').checked=!!(ev&&ev.ciExport);
+    document.getElementById('eventHasCo').checked=hasCo;
+    document.getElementById('coDateWrap').style.display=hasCo?'block':'none';
+    document.getElementById('eventCoDate').value=ev?(ev.coDate||ev.date||''):'';
+    document.getElementById('eventCoTime').value=ev?(ev.coTime||''):'';
+    document.getElementById('eventCoPrice').value=(ev&&ev.coPrice!=null)?ev.coPrice:'';
+    document.getElementById('eventCoExport').checked=!!(ev&&ev.coExport);
+    document.getElementById('eventDetails').value=ev?(ev.details||''):'';
+    document.getElementById('deleteEventBtn').style.display=ev?'inline-flex':'none';
+    updateCicoVisibility();
+    updatePriceLabel();
+    overlay.classList.add('show');
+    setTimeout(()=>document.getElementById('eventTitle').focus(),50);
+  }
+  function closeModal(){ overlay.classList.remove('show'); }
+
+  function updateCicoVisibility(){
+    const type=document.getElementById('eventType').value;
+    document.getElementById('cicoBox').classList.toggle('visible', type==='service');
+    document.getElementById('prestaFieldRow').style.display=(type==='service')?'block':'none';
+    if(type==='service') populatePrestaSelect(document.getElementById('eventPresta').value);
+  }
+
+  function populatePrestaSelect(selId){
+    const sel=document.getElementById('eventPresta');
+    sel.innerHTML='<option value="">— Aucun —</option>';
+    prestataires.forEach(p=>{
+      const opt=document.createElement('option'); opt.value=p.id;
+      opt.textContent=p.name+(p.specialty?' ('+p.specialty+')':'');
+      if(p.id===selId) opt.selected=true;
+      sel.appendChild(opt);
+    });
+  }
+  document.getElementById('eventHasCi').addEventListener('change',(e)=>{
+    document.getElementById('ciDateWrap').style.display=e.target.checked?'block':'none';
+    if(e.target.checked&&!document.getElementById('eventCiDate').value)
+      document.getElementById('eventCiDate').value=document.getElementById('eventDate').value;
+  });
+  document.getElementById('eventHasCo').addEventListener('change',(e)=>{
+    document.getElementById('coDateWrap').style.display=e.target.checked?'block':'none';
+    if(e.target.checked&&!document.getElementById('eventCoDate').value)
+      document.getElementById('eventCoDate').value=document.getElementById('eventDate').value;
+  });
+  function updatePriceLabel(){
+    const type=document.getElementById('eventType').value;
+    const lbl=document.getElementById('eventPriceLabel');
+    const inp=document.getElementById('eventPrice');
+    if(type==='service'){ lbl.textContent='Prix ménage (€)'; inp.placeholder='Laisser vide pour le prix du logement'; }
+    else{ lbl.textContent='Prix (€)'; inp.placeholder='Laisser vide pour le prix par défaut (18 €)'; }
+  }
+  document.getElementById('eventType').addEventListener('change',()=>{ updateCicoVisibility(); updatePriceLabel(); });
+
+  function populatePropertySelect(selId){
+    const sel=document.getElementById('eventProperty');
+    sel.innerHTML='<option value="">— Aucun / saisie libre —</option>';
+    owners.forEach(o=>o.properties.forEach(p=>{
+      const opt=document.createElement('option'); opt.value=p.id;
+      const label=(p.name?p.name+' — ':'')+p.address+' ('+o.name+')';
+      opt.textContent=label;
+      if(p.id===selId) opt.selected=true;
+      sel.appendChild(opt);
+    }));
+  }
+  document.getElementById('eventProperty').addEventListener('change',(e)=>{
+    const f=findPropertyById(e.target.value);
+    if(f){
+      document.getElementById('eventLocation').value=f.property.address;
+      // Auto-remplir le prix seulement si pas déjà saisi manuellement
+      const priceInput=document.getElementById('eventPrice');
+      if(f.property.cleaningPrice) priceInput.value=f.property.cleaningPrice;
+      else priceInput.value='';
+    }
+  });
+
+  document.getElementById('newEventTopBtn').addEventListener('click',()=>openModal());
+  document.getElementById('newEventHeroBtn').addEventListener('click',()=>openModal());
+  document.getElementById('cancelEventBtn').addEventListener('click',closeModal);
+  overlay.addEventListener('click',(e)=>{ if(e.target===overlay) closeModal(); });
+
+  document.getElementById('eventForm').addEventListener('submit',(e)=>{
+    e.preventDefault();
+    const id=document.getElementById('eventId').value;
+    const priceVal=document.getElementById('eventPrice').value;
+    const type=document.getElementById('eventType').value;
+    const data={
+      title:document.getElementById('eventTitle').value.trim(),
+      date:document.getElementById('eventDate').value,
+      time:document.getElementById('eventTime').value,
+      type,
+      propertyId:document.getElementById('eventProperty').value||null,
+      location:document.getElementById('eventLocation').value.trim(),
+      price:priceVal===''?null:(parseFloat(priceVal)||0),
+      prestaId:type==='service'?(document.getElementById('eventPresta').value||null):null,
+      hasCi:type==='service'?document.getElementById('eventHasCi').checked:false,
+      ciDate:type==='service'&&document.getElementById('eventHasCi').checked?document.getElementById('eventCiDate').value:'',
+      ciTime:type==='service'&&document.getElementById('eventHasCi').checked?document.getElementById('eventCiTime').value:'',
+      ciPrice:type==='service'&&document.getElementById('eventHasCi').checked?(document.getElementById('eventCiPrice').value===''?null:parseFloat(document.getElementById('eventCiPrice').value)):null,
+      ciExport:type==='service'&&document.getElementById('eventHasCi').checked?document.getElementById('eventCiExport').checked:false,
+      hasCo:type==='service'?document.getElementById('eventHasCo').checked:false,
+      coDate:type==='service'&&document.getElementById('eventHasCo').checked?document.getElementById('eventCoDate').value:'',
+      coTime:type==='service'&&document.getElementById('eventHasCo').checked?document.getElementById('eventCoTime').value:'',
+      coPrice:type==='service'&&document.getElementById('eventHasCo').checked?(document.getElementById('eventCoPrice').value===''?null:parseFloat(document.getElementById('eventCoPrice').value)):null,
+      coExport:type==='service'&&document.getElementById('eventHasCo').checked?document.getElementById('eventCoExport').checked:false,
+      details:document.getElementById('eventDetails').value.trim()
+    };
+    if(id) updateEvent(id,data); else addEvent(data);
+    closeModal(); renderAll();
+  });
+
+  document.getElementById('deleteEventBtn').addEventListener('click',()=>{
+    const id=document.getElementById('eventId').value;
+    if(id&&confirm('Supprimer cet événement ?')){ deleteEvent(id); closeModal(); renderAll(); }
+  });
+
+  // ---------- Calendar nav ----------
+  document.getElementById('calPrev').addEventListener('click',()=>{ calViewDate.setMonth(calViewDate.getMonth()-1); renderCalendar(); });
+  document.getElementById('calNext').addEventListener('click',()=>{ calViewDate.setMonth(calViewDate.getMonth()+1); renderCalendar(); });
+  document.getElementById('calToday').addEventListener('click',()=>{ calViewDate=new Date(); selectedDate=null; renderCalendar(); renderEvents(); });
+
+  // ---------- Filters & search ----------
+  document.querySelectorAll('.filter-chip').forEach(chip=>{
+    chip.addEventListener('click',()=>{
+      document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active'); currentFilter=chip.dataset.filter; renderEvents();
+    });
+  });
+  document.getElementById('searchInput').addEventListener('input',(e)=>{ searchTerm=e.target.value.trim(); renderEvents(); });
+
+  // ---------- Planning view toggle ----------
+  (function(){ const now=new Date(); planningMonth=now.getFullYear()+"-"+pad(now.getMonth()+1); document.getElementById('planningMonthPicker').value=planningMonth; })();
+  document.getElementById('viewUpcoming').addEventListener('click',()=>{
+    planningView='upcoming';
+    document.getElementById('viewUpcoming').classList.add('active');
+    document.getElementById('viewMonth').classList.remove('active');
+    document.getElementById('monthPickerWrap').style.display='none';
+    renderEvents();
+  });
+  document.getElementById('viewMonth').addEventListener('click',()=>{
+    planningView='month';
+    document.getElementById('viewMonth').classList.add('active');
+    document.getElementById('viewUpcoming').classList.remove('active');
+    document.getElementById('monthPickerWrap').style.display='flex';
+    renderEvents();
+  });
+  document.getElementById('planningMonthPicker').addEventListener('change',(e)=>{ planningMonth=e.target.value; renderEvents(); });
+
+  // ---------- Tools ----------
+  document.getElementById('clearAllBtn').addEventListener('click',()=>{
+    if(events.length===0) return;
+    if(confirm('Effacer tous les événements ? Cette action est irréversible.')){ clearAll(); renderAll(); showImportStatus('Tous les événements ont été supprimés.',true); }
+  });
+
+  document.getElementById('reclassifyTypesBtn').addEventListener('click',()=>{
+    let changed=0;
+    events.forEach(ev=>{ const t=guessType(ev.title+' '+(ev.details||'')); if(t!==ev.type){ev.type=t;changed++;} });
+    if(changed>0){ saveEvents(); renderAll(); showImportStatus(changed+' événement(s) reclassé(s).',true); }
+    else showImportStatus('Aucun événement à reclasser.',false);
+  });
+
+  document.getElementById('dedupeBtn').addEventListener('click',()=>{
+    const seen=new Set(), before=events.length;
+    events=events.filter(ev=>{
+      if(!['arrivee','depart','service'].includes(ev.type)) return true;
+      const k=normalizeAddr(ev.title)+'|'+ev.date+'|'+(ev.time||'');
+      if(seen.has(k)) return false; seen.add(k); return true;
+    });
+    const removed=before-events.length;
+    if(removed>0){ saveEvents(); renderAll(); showImportStatus(removed+' doublon(s) supprimé(s).',true); }
+    else showImportStatus('Aucun doublon trouvé.',false);
+  });
+
+  document.getElementById('detectPropertiesBtn').addEventListener('click',()=>{
+    const candidates=events.filter(ev=>!ev.propertyId).map(ev=>({ev,addr:ev.detectedAddress||extractAddr(ev.title)})).filter(x=>x.addr);
+    if(candidates.length===0){ showImportStatus('Aucun nouveau logement détecté.',false); return; }
+    const groups=new Map();
+    candidates.forEach(({ev,addr})=>{ const k=normalizeAddr(addr); if(!groups.has(k)) groups.set(k,{address:addr,eventIds:[]}); groups.get(k).eventIds.push(ev.id); if(!ev.detectedAddress) ev.detectedAddress=addr; });
+    let queued=0,linked=0;
+    groups.forEach(g=>{ const ex=findPropertyByAddress(g.address); if(ex){ g.eventIds.forEach(id=>updateEvent(id,{propertyId:ex.property.id})); linked+=g.eventIds.length; }else{ assignmentQueue.push(g); queued++; } });
+    saveEvents(); renderAll();
+    if(queued===0) showImportStatus(linked+' événement(s) lié(s).',true);
+    else{ showImportStatus(queued+' logement(s) à associer.',true); processNextAssignment(); }
+  });
+
+  // ---------- Import ----------
+  const importInput=document.getElementById('importInput');
+  document.getElementById('importTopBtn').addEventListener('click',()=>importInput.click());
+  document.getElementById('importHeroBtn').addEventListener('click',()=>importInput.click());
+  document.getElementById('importPanelBtn').addEventListener('click',()=>importInput.click());
+
+  importInput.addEventListener('change',(e)=>{
+    const file=e.target.files[0]; if(!file) return;
+    const ext=file.name.split('.').pop().toLowerCase(), reader=new FileReader();
+    if(ext==='ics'){
+      reader.onload=()=>{ try{ finishImport(parseICS(reader.result,file.name),file.name); }catch(err){ showImportStatus('Erreur iCal : '+err.message,false); } };
+      reader.readAsText(file);
+    }else if(ext==='csv'){
+      reader.onload=()=>{ try{ finishImport(rowsToEvents(parseCSV(reader.result),file.name),file.name); }catch(err){ showImportStatus('Erreur CSV : '+err.message,false); } };
+      reader.readAsText(file);
+    }else showImportStatus("Format non supporté. Utilisez .csv ou .ics.",false);
+    importInput.value='';
+  });
+
+  function finishImport(imported,filename){
+    if(!imported||imported.length===0){ showImportStatus('Aucun événement trouvé dans "'+filename+'".',false); return; }
+    imported.forEach(ev=>addEvent(ev)); renderAll(); showImportStatus(imported.length+' événement(s) importé(s) depuis "'+filename+'".',true);
+    queueAddressAssignments(imported);
+  }
+  function showImportStatus(msg,ok){ const el=document.getElementById('importStatus'); el.textContent=msg; el.className='import-status show '+(ok?'ok':'err'); }
+
+  function queueAddressAssignments(imported){
+    const groups=new Map();
+    imported.forEach(ev=>{ if(!ev.detectedAddress) return; const k=normalizeAddr(ev.detectedAddress); if(!groups.has(k)) groups.set(k,{address:ev.detectedAddress,eventIds:[]}); groups.get(k).eventIds.push(ev.id); });
+    groups.forEach(g=>{ const ex=findPropertyByAddress(g.address); if(ex){ g.eventIds.forEach(id=>updateEvent(id,{propertyId:ex.property.id})); }else assignmentQueue.push(g); });
+    saveEvents(); renderAll(); processNextAssignment();
+  }
+
+  // ---------- Assignment modal ----------
+  const assignOverlay=document.getElementById('assignModalOverlay');
+  function openAssignModal(g){
+    document.getElementById('assignAddress').textContent=g.address;
+    document.getElementById('assignCount').textContent=g.eventIds.length;
+    const sel=document.getElementById('assignOwnerSelect');
+    sel.innerHTML='<option value="__new__">＋ Créer un nouveau propriétaire…</option>';
+    owners.forEach(o=>{ const opt=document.createElement('option'); opt.value=o.id; opt.textContent=o.name; sel.appendChild(opt); });
+    if(owners.length>0) sel.value=owners[0].id;
+    toggleNewOwnerField();
+    document.getElementById('assignPropertyAddress').value=g.address;
+    document.getElementById('assignCleaningPrice').value='';
+    document.getElementById('assignNewOwnerName').value='';
+    assignOverlay.classList.add('show');
+  }
+  function closeAssignModal(){ assignOverlay.classList.remove('show'); }
+  function processNextAssignment(){ if(assignmentQueue.length===0){ closeAssignModal(); return; } openAssignModal(assignmentQueue[0]); }
+  function toggleNewOwnerField(){ document.getElementById('assignNewOwnerRow').style.display=document.getElementById('assignOwnerSelect').value==='__new__'?'':'none'; }
+  document.getElementById('assignOwnerSelect').addEventListener('change',toggleNewOwnerField);
+  document.getElementById('assignSkipBtn').addEventListener('click',()=>{ assignmentQueue.shift(); processNextAssignment(); });
+  document.getElementById('assignForm').addEventListener('submit',(e)=>{
+    e.preventDefault();
+    const g=assignmentQueue[0]; if(!g) return;
+    let ownerId=document.getElementById('assignOwnerSelect').value;
+    const address=document.getElementById('assignPropertyAddress').value.trim();
+    const price=parseFloat(document.getElementById('assignCleaningPrice').value)||0;
+    if(ownerId==='__new__'){ const name=document.getElementById('assignNewOwnerName').value.trim(); if(!name){alert('Indiquez un nom de propriétaire.');return;} ownerId=addOwner({name,contact:''}).id; }
+    const prop=addProperty(ownerId,{address,cleaningPrice:price});
+    if(prop) g.eventIds.forEach(id=>updateEvent(id,{propertyId:prop.id}));
+    assignmentQueue.shift(); renderAll(); processNextAssignment();
+  });
+
+  // ---------- CSV parser ----------
+  function parseCSV(text){
+    if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+    const first=text.split(/\r\n|\n|\r/)[0]||'';
+    const delim=(first.split(';').length>first.split(',').length)?';':',';
+    const rows=[]; let row=[],field='',inQ=false;
+    for(let i=0;i<text.length;i++){
+      const c=text[i];
+      if(inQ){ if(c==='"'){if(text[i+1]==='"'){field+='"';i++;}else inQ=false;}else field+=c; }
+      else if(c==='"') inQ=true;
+      else if(c===delim){row.push(field);field='';}
+      else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(field);field=''; rows.push(row);row=[]; }
+      else field+=c;
+    }
+    if(field!==''||row.length>0){row.push(field);rows.push(row);}
+    return rows.filter(r=>!(r.length===1&&r[0]===''));
+  }
+
+  function rowsToEvents(rows,filename){
+    if(rows.length===0) return [];
+    const header=rows[0].map(h=>String(h).toLowerCase().trim());
+    const cm={
+      title:findCol(header,['titre','title','nom','événement','evenement','résumé','resume','summary','objet']),
+      date:findCol(header,['date','jour','début','debut','start date']),
+      time:findCol(header,['heure','time','heure début','heure debut','start time']),
+      type:findCol(header,['type','catégorie','categorie','category']),
+      location:findCol(header,['lieu','adresse','location','address']),
+      details:findCol(header,['détails','details','notes','description','remarques'])
+    };
+    const hasHdr=cm.title!==-1||cm.date!==-1, dataRows=hasHdr?rows.slice(1):rows;
+    const tCol=cm.title!==-1?cm.title:0, dCol=cm.date!==-1?cm.date:1;
+    const out=[];
+    dataRows.forEach(row=>{
+      if(!row||row.every(c=>c===''||c==null)) return;
+      const date=parseLooseDate(row[dCol]); if(!date) return;
+      const title=String(row[tCol]||'').trim()||'Événement importé';
+      const time=cm.time!==-1?parseLooseTime(row[cm.time]):'';
+      const location=cm.location!==-1?String(row[cm.location]||'').trim():'';
+      const details=cm.details!==-1?String(row[cm.details]||'').trim():'';
+      let type=cm.type!==-1?normalizeType(row[cm.type]):''; if(!type) type=guessType(title+' '+details);
+      out.push({id:uid(),title,date,time,type,location,details,source:'CSV : '+filename,detectedAddress:location||extractAddr(title)||null});
+    });
+    return out;
+  }
+  function findCol(header,cands){ for(let i=0;i<header.length;i++) for(const c of cands) if(header[i]===c||header[i].includes(c)) return i; return -1; }
+  function normalizeType(v){ const t=String(v||'').toLowerCase(); if(/arriv|check[\s-]?in/.test(t)) return 'arrivee'; if(/d[ée]part|check[\s-]?out/.test(t)) return 'depart'; if(/service|prestation|m[ée]nage|entretien|maintenance/.test(t)) return 'service'; return t?'autre':''; }
+
+  // ---------- ICS parser ----------
+  function parseICS(text,filename){
+    const lines=unfoldICS(text); const evts=[]; let cur=null;
+    lines.forEach(line=>{
+      if(line.startsWith('BEGIN:VEVENT')) cur={};
+      else if(line.startsWith('END:VEVENT')){ if(cur){ const p=icsToPlanning(cur,filename); if(p) evts.push(p); } cur=null; }
+      else if(cur){ const idx=line.indexOf(':'); if(idx===-1) return; let key=line.slice(0,idx).split(';')[0].toUpperCase(); const val=line.slice(idx+1); if(key==='SUMMARY') cur.summary=decodeICS(val); else if(key==='DTSTART') cur.dtstart=val; else if(key==='DTEND') cur.dtend=val; else if(key==='LOCATION') cur.location=decodeICS(val); else if(key==='DESCRIPTION') cur.description=decodeICS(val); }
+    });
+    return evts;
+  }
+  function unfoldICS(text){ const raw=text.split(/\r\n|\n|\r/),out=[]; raw.forEach(l=>{ if((l.startsWith(' ')||l.startsWith('\t'))&&out.length>0) out[out.length-1]+=l.slice(1); else out.push(l); }); return out; }
+  function decodeICS(s){ return s.replace(/\\n/gi,' ').replace(/\\,/g,',').replace(/\\;/g,';').replace(/\\\\/g,'\\').trim(); }
+  function icsToPlanning(cur,filename){
+    if(!cur.dtstart) return null;
+    const {date,time}=parseICSDate(cur.dtstart); if(!date) return null;
+    const title=cur.summary||'Événement importé', details=cur.description||'';
+    const detectedAddress=cur.location||extractAddr(title);
+    return {id:uid(),title,date,time,type:guessType(title+' '+details),location:cur.location||'',details,source:'iCal : '+filename,detectedAddress:detectedAddress||null};
+  }
+  function parseICSDate(v){ const m=v.match(/^(\d{4})(\d{2})(\d{2})(T(\d{2})(\d{2})(\d{2})?Z?)?$/); if(!m) return {date:null,time:''}; return {date:m[1]+"-"+m[2]+"-"+m[3],time:m[5]?m[5]+":"+m[6]:''}; }
+
+  function extractAddr(title){
+    if(!title) return null;
+    let t=title.replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]+\s*/u,'').trim();
+    let m;
+    if((m=t.match(/^Cleaning\s+M[\d:]+\s*-\s*(.+)$/i))) return m[1].trim();
+    if((m=t.match(/^C[IO]\s+(.+?)\s*-\s*.+$/i))) return m[1].trim();
+    if((m=t.match(/^M[ée]nage en Profondeur pour\s+(.+)$/i))) return m[1].trim();
+    if((m=t.match(/^D[ée]poussi[ée]rage\s*-\s*(.+)$/i))) return m[1].trim();
+    if((m=t.match(/^.+?\s-\s(.+)$/))) return m[1].trim();
+    return null;
+  }
+
+  // ---------- Tabs ----------
+  function switchTab(tab){
+    document.querySelectorAll('.tab-link').forEach(l=>l.classList.remove('active'));
+    document.querySelectorAll('.tab-link[data-tab="'+tab+'"]').forEach(l=>l.classList.add('active'));
+    document.getElementById('view-planning').style.display=tab==='planning'?'':'none';
+    document.getElementById('view-owners').style.display=tab==='owners'?'':'none';
+    document.getElementById('view-properties').style.display=tab==='properties'?'':'none';
+    document.getElementById('view-prestataires').style.display=tab==='prestataires'?'':'none';
+    // FAB visible only on planning
+    const fab=document.getElementById('fabBtn');
+    if(fab) fab.style.display=tab==='planning'?'':'none';
+    if(tab==='owners') renderOwners();
+    if(tab==='properties') renderProperties();
+    if(tab==='prestataires') renderPrestataires();
+    window.scrollTo(0,0);
+  }
+
+  document.querySelectorAll('.tab-link').forEach(link=>{
+    link.addEventListener('click',(e)=>{
+      e.preventDefault();
+      switchTab(link.dataset.tab);
+    });
+  });
+
+  // FAB → nouvel événement
+  const fabBtn=document.getElementById('fabBtn');
+  if(fabBtn) fabBtn.addEventListener('click',()=>openModal());
+
+  // ---------- Properties rendering ----------
+  let propSearch='', propOwnerFilter='';
+
+  function refreshPropOwnerFilter(){
+    const sel=document.getElementById('propOwnerFilter');
+    const prev=sel.value;
+    sel.innerHTML='<option value="">Tous les propriétaires</option>';
+    owners.forEach(o=>{ const opt=document.createElement('option'); opt.value=o.id; opt.textContent=o.name; sel.appendChild(opt); });
+    if(prev) sel.value=prev;
+    propOwnerFilter=sel.value;
+  }
+  document.getElementById('propSearchInput').addEventListener('input',(e)=>{ propSearch=e.target.value.trim().toLowerCase(); renderProperties(); });
+  document.getElementById('propOwnerFilter').addEventListener('change',(e)=>{ propOwnerFilter=e.target.value; renderProperties(); });
+
+  function renderProperties(){
+    const container=document.getElementById('propertiesContainer'); if(!container) return;
+    refreshPropOwnerFilter();
+    container.innerHTML='';
+
+    // Collect all properties from all owners
+    const allProps=[];
+    owners.forEach(owner=>{
+      owner.properties.forEach(prop=>{
+        if(propOwnerFilter && owner.id!==propOwnerFilter) return;
+        if(propSearch && !(prop.name||'').toLowerCase().includes(propSearch) && !prop.address.toLowerCase().includes(propSearch) && !owner.name.toLowerCase().includes(propSearch)) return;
+        allProps.push({owner, prop});
+      });
+    });
+
+    if(owners.length===0||owners.every(o=>o.properties.length===0)){
+      container.innerHTML=`<div class="empty-state"><div class="display">Aucun logement</div><p>Ajoutez des logements depuis l'onglet Propriétaires.</p></div>`;
+      return;
+    }
+    if(allProps.length===0){
+      container.innerHTML=`<div class="empty-state"><div class="display">Aucun résultat</div><p>Aucun logement ne correspond à cette recherche.</p></div>`;
+      return;
+    }
+
+    allProps.forEach(({owner, prop})=>{
+      const details=prop.details||{};
+      const card=document.createElement('div'); card.className='owner-card';
+
+      // Header
+      const head=document.createElement('div'); head.style.cssText='display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;';
+      const headLeft=document.createElement('div');
+      headLeft.innerHTML=`
+        <div style="font-size:1.15rem;font-family:Georgia,'Times New Roman',serif;font-weight:600;">${escapeHtml(prop.name||prop.address)}</div>
+        <div style="font-size:0.82rem;color:var(--steel);margin-top:3px;">📍 ${escapeHtml(prop.address)}</div>
+        <div style="font-size:0.82rem;color:var(--steel);margin-top:2px;">👤 ${escapeHtml(owner.name)}</div>`;
+      const headRight=document.createElement('div'); headRight.style.cssText='display:flex;gap:8px;flex-shrink:0;align-items:center;';
+
+      const editBtn=document.createElement('button'); editBtn.className='btn btn-ghost on-light btn-sm'; editBtn.textContent='✎ Modifier les détails';
+      editBtn.addEventListener('click',()=>openPropDetail(owner.id, prop));
+      headRight.appendChild(editBtn);
+
+      const priceTag=document.createElement('span'); priceTag.className='source-pill'; priceTag.textContent='Ménage : '+formatPrice(prop.cleaningPrice);
+      headRight.appendChild(priceTag);
+
+      head.appendChild(headLeft); head.appendChild(headRight); card.appendChild(head);
+
+      // Details grid
+      const grid=document.createElement('div'); grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;';
+
+      function detailBlock(icon, label, value){
+        if(!value) return;
+        const b=document.createElement('div'); b.style.cssText='background:var(--cream);border-radius:10px;padding:12px 14px;';
+        b.innerHTML=`<div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--steel);margin-bottom:4px;">${icon} ${label}</div><div style="font-size:0.9rem;color:var(--ink);white-space:pre-wrap;">${escapeHtml(value)}</div>`;
+        grid.appendChild(b);
+      }
+
+      detailBlock('🛏','Chambres / Capacité', [details.bedrooms?details.bedrooms+' ch.':'', details.capacity?details.capacity+' pers.':''].filter(Boolean).join(' · ')||null);
+      detailBlock('🏢','Étage / situation', details.floor);
+      detailBlock('🔑','Code d\'accès', details.accessCode);
+      detailBlock('📍','Clés', details.keyLocation);
+      detailBlock('🚪','Instructions accès', details.accessInstructions);
+      detailBlock('📶','WiFi', details.wifiName?'📶 '+details.wifiName+(details.wifiPassword?' · 🔒 '+details.wifiPassword:''):null);
+      detailBlock('🅿️','Parking', details.parking);
+      detailBlock('🧹','Instructions ménage', details.cleaningInstructions);
+      detailBlock('✅','Instructions check-in', details.checkinInstructions);
+      detailBlock('🚪','Instructions check-out', details.checkoutInstructions);
+      detailBlock('📝','Notes', details.notes);
+
+      if(grid.children.length>0) card.appendChild(grid);
+
+      // Photos
+      const photos=(prop.details||{}).photos||[];
+      if(photos.length>0){
+        const photoWrap=document.createElement('div');
+        photoWrap.style.cssText='display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;';
+        photos.forEach(src=>{
+          const img=document.createElement('img');
+          img.src=src;
+          img.style.cssText='width:120px;height:90px;object-fit:cover;border-radius:10px;border:1px solid var(--line);cursor:pointer;transition:.15s;';
+          img.addEventListener('click',()=>{
+            const ov=document.createElement('div');
+            ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:200;cursor:zoom-out;';
+            const big=document.createElement('img');
+            big.src=src; big.style.cssText='max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.5);';
+            ov.appendChild(big); document.body.appendChild(ov);
+            ov.addEventListener('click',()=>document.body.removeChild(ov));
+          });
+          photoWrap.appendChild(img);
+        });
+        card.appendChild(photoWrap);
+      }
+
+      if(grid.children.length===0&&photos.length===0){
+        const hint=document.createElement('p'); hint.style.cssText='font-size:0.85rem;color:var(--steel);margin:0;';
+        hint.textContent='Aucun détail renseigné. Cliquez sur "Modifier les détails" pour ajouter les informations.';
+        card.appendChild(hint);
+      }
+
+      container.appendChild(card);
+    });
+  }
+
+  // ---------- Property detail modal ----------
+  const propDetailOverlay=document.getElementById('propDetailOverlay');
+  document.getElementById('cancelPropDetailBtn').addEventListener('click',()=>propDetailOverlay.classList.remove('show'));
+  propDetailOverlay.addEventListener('click',(e)=>{ if(e.target===propDetailOverlay) propDetailOverlay.classList.remove('show'); });
+
+  function openPropDetail(ownerId, prop){
+    document.getElementById('propDetailTitle').textContent='Détails — '+(prop.name||prop.address);
+    document.getElementById('propDetailId').value=prop.id;
+    document.getElementById('propDetailOwnerId').value=ownerId;
+    const d=prop.details||{};
+    document.getElementById('pdName').value=prop.name||'';
+    document.getElementById('pdAddress').value=prop.address||'';
+    document.getElementById('pdCleaningPrice').value=prop.cleaningPrice||'';
+    document.getElementById('pdCapacity').value=d.capacity||'';
+    document.getElementById('pdBedrooms').value=d.bedrooms||'';
+    document.getElementById('pdFloor').value=d.floor||'';
+    document.getElementById('pdAccessCode').value=d.accessCode||'';
+    document.getElementById('pdKeyLocation').value=d.keyLocation||'';
+    document.getElementById('pdAccessInstructions').value=d.accessInstructions||'';
+    document.getElementById('pdWifiName').value=d.wifiName||'';
+    document.getElementById('pdWifiPassword').value=d.wifiPassword||'';
+    document.getElementById('pdParking').value=d.parking||'';
+    document.getElementById('pdCleaningInstructions').value=d.cleaningInstructions||'';
+    document.getElementById('pdCheckinInstructions').value=d.checkinInstructions||'';
+    document.getElementById('pdCheckoutInstructions').value=d.checkoutInstructions||'';
+    document.getElementById('pdNotes').value=d.notes||'';
+    currentPhotos=[...(d.photos||[])];
+    renderPhotoPreview();
+    propDetailOverlay.classList.add('show');
+  }
+
+  // ---------- Photo management ----------
+  let currentPhotos = []; // array of base64 strings for the open modal
+
+  function compressImage(file, maxW=900, quality=0.75){
+    return new Promise(resolve=>{
+      const reader=new FileReader();
+      reader.onload=ev=>{
+        const img=new Image();
+        img.onload=()=>{
+          const scale=Math.min(1, maxW/img.width);
+          const canvas=document.createElement('canvas');
+          canvas.width=Math.round(img.width*scale);
+          canvas.height=Math.round(img.height*scale);
+          canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src=ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderPhotoPreview(){
+    const list=document.getElementById('photoPreviewList');
+    list.innerHTML='';
+    currentPhotos.forEach((src,i)=>{
+      const wrap=document.createElement('div');
+      wrap.style.cssText='position:relative;width:100px;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--line);';
+      const img=document.createElement('img');
+      img.src=src; img.style.cssText='width:100%;height:100%;object-fit:cover;';
+      const del=document.createElement('button');
+      del.textContent='✕';
+      del.style.cssText='position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(14,34,51,0.7);color:#fff;font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;';
+      del.addEventListener('click',(e)=>{ e.preventDefault(); currentPhotos.splice(i,1); renderPhotoPreview(); });
+      wrap.appendChild(img); wrap.appendChild(del);
+      list.appendChild(wrap);
+    });
+  }
+
+  document.getElementById('photoInput').addEventListener('change', async(e)=>{
+    const files=Array.from(e.target.files);
+    for(const file of files){
+      if(currentPhotos.length>=10) break;
+      const b64=await compressImage(file);
+      currentPhotos.push(b64);
+    }
+    renderPhotoPreview();
+    e.target.value='';
+  });
+
+  document.getElementById('propDetailForm').addEventListener('submit',(e)=>{
+    e.preventDefault();
+    const ownerId=document.getElementById('propDetailOwnerId').value;
+    const propId=document.getElementById('propDetailId').value;
+    const data={
+      name:document.getElementById('pdName').value.trim(),
+      address:document.getElementById('pdAddress').value.trim(),
+      cleaningPrice:parseFloat(document.getElementById('pdCleaningPrice').value)||0,
+      details:{
+        capacity:document.getElementById('pdCapacity').value.trim(),
+        bedrooms:document.getElementById('pdBedrooms').value.trim(),
+        floor:document.getElementById('pdFloor').value.trim(),
+        accessCode:document.getElementById('pdAccessCode').value.trim(),
+        keyLocation:document.getElementById('pdKeyLocation').value.trim(),
+        accessInstructions:document.getElementById('pdAccessInstructions').value.trim(),
+        wifiName:document.getElementById('pdWifiName').value.trim(),
+        wifiPassword:document.getElementById('pdWifiPassword').value.trim(),
+        parking:document.getElementById('pdParking').value.trim(),
+        cleaningInstructions:document.getElementById('pdCleaningInstructions').value.trim(),
+        checkinInstructions:document.getElementById('pdCheckinInstructions').value.trim(),
+        checkoutInstructions:document.getElementById('pdCheckoutInstructions').value.trim(),
+        notes:document.getElementById('pdNotes').value.trim(),
+        photos:[...currentPhotos]
+      }
+    };
+    updateProperty(ownerId, propId, data);
+    propDetailOverlay.classList.remove('show');
+    renderProperties(); renderOwners(); renderAll();
+  });
+
+  // ---------- Prestataires rendering ----------
+  (function(){ const now=new Date(); document.getElementById('prestaMoisPicker').value=now.getFullYear()+"-"+pad(now.getMonth()+1); })();
+  document.getElementById('prestaSearchInput').addEventListener('input',(e)=>{ prestaSearch=e.target.value.trim(); renderPrestataires(); });
+  document.getElementById('prestaMoisPicker').addEventListener('change', renderPrestataires);
+
+  function renderPrestataires(){
+    const container=document.getElementById('prestatairesContainer'); if(!container) return;
+    container.innerHTML='';
+    const s=prestaSearch.toLowerCase();
+    const list=prestataires.filter(p=>!s||p.name.toLowerCase().includes(s)||(p.specialty||'').toLowerCase().includes(s));
+    const monthVal=document.getElementById('prestaMoisPicker').value;
+
+    if(prestataires.length===0){
+      container.innerHTML=`<div class="empty-state"><div class="display">Aucun prestataire</div><p>Ajoutez un prestataire pour lui assigner des missions.</p><button class="btn btn-primary" id="emptyPrestaBtn">＋ Nouveau prestataire</button></div>`;
+      document.getElementById('emptyPrestaBtn').addEventListener('click',()=>openPrestaModal());
+      return;
+    }
+    if(list.length===0){
+      container.innerHTML=`<div class="empty-state"><div class="display">Aucun résultat</div><p>Aucun prestataire ne correspond à cette recherche.</p></div>`;
+      return;
+    }
+
+    list.forEach(presta=>{
+      const missions=events.filter(e=>e.prestaId===presta.id&&e.type==='service'&&(!monthVal||e.date.startsWith(monthVal)));
+      const card=document.createElement('div'); card.className='owner-card';
+
+      // Header
+      const head=document.createElement('div'); head.className='owner-card-head';
+      const missionCount=missions.length;
+      const totalPrice=missions.reduce((s,e)=>s+getEventPrice(e),0);
+      head.innerHTML=`<div style="display:flex;flex-direction:column;gap:4px;"><h3 style="margin:0;font-size:1.15rem;">${escapeHtml(presta.name)}${presta.specialty?`<span style="font-size:0.78rem;color:var(--steel);font-weight:400;margin-left:10px;">${escapeHtml(presta.specialty)}</span>`:''}</h3><div style="font-size:0.8rem;color:var(--steel);display:flex;gap:16px;">${presta.phone?`<span>📞 ${escapeHtml(presta.phone)}</span>`:''} ${presta.email?`<span>✉️ ${escapeHtml(presta.email)}</span>`:''}</div></div>`;
+
+      const headRight=document.createElement('div'); headRight.style.cssText='display:flex;align-items:center;gap:8px;flex-shrink:0;';
+      const countPill=document.createElement('span'); countPill.className='source-pill';
+      countPill.textContent=missionCount+' mission'+(missionCount>1?'s':'')+' · '+formatPrice(totalPrice);
+      headRight.appendChild(countPill);
+
+      const sendBtn=document.createElement('button'); sendBtn.className='btn btn-primary btn-sm'; sendBtn.textContent='✉ Envoyer les missions';
+      sendBtn.addEventListener('click',()=>openMissionSheet(presta, missions));
+      headRight.appendChild(sendBtn);
+
+      const editBtn=document.createElement('div'); editBtn.className='icon-btn'; editBtn.title='Modifier'; editBtn.textContent='✎';
+      editBtn.addEventListener('click',()=>openPrestaModal(presta)); headRight.appendChild(editBtn);
+      const delBtn=document.createElement('div'); delBtn.className='icon-btn'; delBtn.title='Supprimer'; delBtn.textContent='🗑';
+      delBtn.addEventListener('click',()=>{ if(confirm('Supprimer ce prestataire ?')){ deletePresta(presta.id); renderPrestataires(); renderAll(); } });
+      headRight.appendChild(delBtn);
+      head.appendChild(headRight); card.appendChild(head);
+
+      if(missions.length===0){
+        const p=document.createElement('p'); p.style.cssText='font-size:0.85rem;color:var(--steel);margin:0;';
+        p.textContent='Aucune mission assignée'+(monthVal?' pour ce mois':'')+'.'; card.appendChild(p);
+      } else {
+        // Group by date
+        const byDate=new Map();
+        [...missions].sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:0)).forEach(ev=>{
+          if(!byDate.has(ev.date)) byDate.set(ev.date,[]);
+          byDate.get(ev.date).push(ev);
+        });
+        byDate.forEach((dayEvts,date)=>{
+          const d=new Date(date+"T00:00:00");
+          const dayLabel=document.createElement('div');
+          dayLabel.style.cssText='font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--steel);padding:10px 0 4px;border-top:1px solid var(--line);margin-top:8px;';
+          dayLabel.textContent=capitalize(DAYS_FULL[d.getDay()])+' '+d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear();
+          card.appendChild(dayLabel);
+          dayEvts.forEach(ev=>{
+            const row=document.createElement('div');
+            row.style.cssText='display:flex;align-items:center;gap:10px;padding:6px 0;font-size:0.88rem;';
+            const f=findPropertyById(ev.propertyId);
+            const addr=f?(f.property.name||f.property.address):(ev.location||ev.title||'');
+            const price=getEventPrice(ev);
+            let extras='';
+            if(ev.hasCi) extras+=` <span class="tag tag-ci" style="font-size:0.62rem;">CI${ev.ciTime?' '+ev.ciTime:''}</span>`;
+            if(ev.hasCo) extras+=` <span class="tag tag-co" style="font-size:0.62rem;">CO${ev.coTime?' '+ev.coTime:''}</span>`;
+            row.innerHTML=`<span style="color:var(--steel);width:48px;flex:none;">${ev.time||'—'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📍 ${escapeHtml(addr)}</span>${extras}<span style="flex:none;font-weight:600;">💶 ${formatPrice(price)}</span>`;
+            const editEvBtn=document.createElement('div'); editEvBtn.className='icon-btn'; editEvBtn.title='Modifier'; editEvBtn.textContent='✎'; editEvBtn.style.cssText='width:30px;height:30px;font-size:0.8rem;flex:none;';
+            editEvBtn.addEventListener('click',()=>openModal(ev));
+            row.appendChild(editEvBtn);
+            card.appendChild(row);
+          });
+        });
+      }
+      container.appendChild(card);
+    });
+  }
+
+  // ---------- Prestataire modal ----------
+  const prestaOverlay=document.getElementById('prestaModalOverlay');
+  document.getElementById('newPrestaBtn').addEventListener('click',()=>openPrestaModal());
+  document.getElementById('cancelPrestaBtn').addEventListener('click',()=>prestaOverlay.classList.remove('show'));
+  prestaOverlay.addEventListener('click',(e)=>{ if(e.target===prestaOverlay) prestaOverlay.classList.remove('show'); });
+
+  function openPrestaModal(p){
+    document.getElementById('prestaModalTitle').textContent=p?'Modifier le prestataire':'Nouveau prestataire';
+    document.getElementById('prestaId').value=p?p.id:'';
+    document.getElementById('prestaName').value=p?p.name:'';
+    document.getElementById('prestaPhone').value=p?(p.phone||''):'';
+    document.getElementById('prestaEmail').value=p?(p.email||''):'';
+    document.getElementById('prestaSpecialty').value=p?(p.specialty||''):'';
+    document.getElementById('prestaNotes').value=p?(p.notes||''):'';
+    document.getElementById('deletePrestaBtn').style.display=p?'inline-flex':'none';
+    prestaOverlay.classList.add('show');
+    setTimeout(()=>document.getElementById('prestaName').focus(),50);
+  }
+  document.getElementById('prestaForm').addEventListener('submit',(e)=>{
+    e.preventDefault();
+    const id=document.getElementById('prestaId').value;
+    const d={name:document.getElementById('prestaName').value.trim(),phone:document.getElementById('prestaPhone').value.trim(),email:document.getElementById('prestaEmail').value.trim(),specialty:document.getElementById('prestaSpecialty').value.trim(),notes:document.getElementById('prestaNotes').value.trim()};
+    if(id) updatePresta(id,d); else addPresta(d);
+    prestaOverlay.classList.remove('show');
+    renderPrestataires(); populatePrestaSelect('');
+  });
+  document.getElementById('deletePrestaBtn').addEventListener('click',()=>{
+    const id=document.getElementById('prestaId').value;
+    if(id&&confirm('Supprimer ce prestataire ?')){ deletePresta(id); prestaOverlay.classList.remove('show'); renderPrestataires(); renderAll(); }
+  });
+
+  // ---------- Mission sheet ----------
+  const missionOverlay=document.getElementById('missionSheetOverlay');
+  document.getElementById('closeMissionSheetBtn').addEventListener('click',()=>missionOverlay.classList.remove('show'));
+  missionOverlay.addEventListener('click',(e)=>{ if(e.target===missionOverlay) missionOverlay.classList.remove('show'); });
+
+  function openMissionSheet(presta, missions){
+    currentMissionPrestaId=presta.id;
+    document.getElementById('missionSheetTitle').textContent='Missions — '+presta.name;
+    const monthVal=document.getElementById('prestaMoisPicker').value;
+    const [mY,mM]=monthVal?monthVal.split('-').map(Number):[null,null];
+    const monthLabel=mY?capitalize(MONTHS[mM-1])+' '+mY:'';
+
+    if(missions.length===0){
+      document.getElementById('missionSheetContent').innerHTML='<p style="color:var(--steel);">Aucune mission à afficher pour cette période.</p>';
+      missionOverlay.classList.add('show'); return;
+    }
+
+    const sorted=[...missions].sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:0));
+    const byDate=new Map();
+    sorted.forEach(ev=>{ if(!byDate.has(ev.date)) byDate.set(ev.date,[]); byDate.get(ev.date).push(ev); });
+
+    let html=`<div style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line);">`;
+    if(presta.phone) html+=`<div>📞 ${escapeHtml(presta.phone)}</div>`;
+    if(presta.email) html+=`<div>✉️ ${escapeHtml(presta.email)}</div>`;
+    if(monthLabel) html+=`<div style="margin-top:6px;font-weight:600;">Période : ${monthLabel}</div>`;
+    html+=`</div>`;
+
+    let total=0;
+    byDate.forEach((dayEvts,date)=>{
+      const d=new Date(date+"T00:00:00");
+      html+=`<div style="margin-top:16px;"><div style="font-weight:700;font-size:0.95rem;text-transform:capitalize;border-bottom:1px solid var(--line);padding-bottom:4px;margin-bottom:8px;">${capitalize(DAYS_FULL[d.getDay()])} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}</div>`;
+      dayEvts.forEach(ev=>{
+        const f=findPropertyById(ev.propertyId);
+        const addr=f?(f.property.name?f.property.name+' — '+f.property.address:f.property.address):(ev.location||ev.title||'');
+        const price=getEventPrice(ev); total+=price;
+        let tags='';
+        if(ev.hasCi) tags+=` <span style="background:#E6F0E8;color:#3F7350;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:600;">CI${ev.ciTime?' '+ev.ciTime:''}</span>`;
+        if(ev.hasCo) tags+=` <span style="background:#F6ECD9;color:#9C7A2E;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:600;">CO${ev.coTime?' '+ev.coTime:''}</span>`;
+        let details='';
+        if(ev.details) details=`<div style="color:var(--steel);font-size:0.82rem;margin-top:2px;">📝 ${escapeHtml(ev.details)}</div>`;
+        html+=`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;gap:10px;border-bottom:1px solid var(--line);">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="color:var(--steel);font-size:0.85rem;flex:none;">${ev.time||'—'}</span>
+              <span>📍 ${escapeHtml(addr)}</span>${tags}
+            </div>${details}
+          </div>
+          <div style="font-weight:700;flex:none;">💶 ${formatPrice(price)}</div>
+        </div>`;
+      });
+      html+=`</div>`;
+    });
+    html+=`<div style="margin-top:16px;text-align:right;font-size:1rem;font-weight:700;border-top:2px solid var(--ink);padding-top:10px;">Total : ${formatPrice(total)}</div>`;
+    document.getElementById('missionSheetContent').innerHTML=html;
+    missionOverlay.classList.add('show');
+  }
+
+  document.getElementById('printMissionSheetBtn').addEventListener('click',()=>{
+    const presta=findPrestaById(currentMissionPrestaId);
+    const content=document.getElementById('missionSheetContent').innerHTML;
+    const title=presta?'Missions — '+presta.name:'Fiche de mission';
+    const w=window.open('','_blank','width=700,height=900');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>body{font-family:Georgia,serif;padding:40px;color:#0E2233;max-width:620px;margin:0 auto;}h1{font-size:1.4rem;margin-bottom:20px;}@media print{button{display:none;}}</style></head><body><h1>${title}</h1>${content}<br><button onclick="window.print()">Imprimer</button></body></html>`);
+    w.document.close();
+  });
+
+  document.getElementById('exportMissionSheetBtn').addEventListener('click',()=>{
+    const presta=findPrestaById(currentMissionPrestaId); if(!presta) return;
+    const monthVal=document.getElementById('prestaMoisPicker').value;
+    const missions=events.filter(e=>e.prestaId===presta.id&&e.type==='service'&&(!monthVal||e.date.startsWith(monthVal)));
+    if(missions.length===0) return;
+    const sorted=[...missions].sort((a,b)=>a.date<b.date?-1:1);
+    const lines=[];
+    lines.push(csvRow([presta.name, presta.phone||'', presta.email||'']));
+    lines.push(csvRow(['DATE','HEURE','ADRESSE','PRIX','CI','CO','NOTES']));
+    sorted.forEach(ev=>{
+      const f=findPropertyById(ev.propertyId);
+      const addr=f?(f.property.name?f.property.name+' — '+f.property.address:f.property.address):(ev.location||ev.title||'');
+      const ci=ev.hasCi?(ev.ciDate?formatDateFR(ev.ciDate)+' '+(ev.ciTime||''):'Oui'):'';
+      const co=ev.hasCo?(ev.coDate?formatDateFR(ev.coDate)+' '+(ev.coTime||''):'Oui'):'';
+      lines.push(csvRow([formatDateFR(ev.date),ev.time||'',addr,formatPriceCSV(getEventPrice(ev)),ci,co,ev.details||'']));
+    });
+    const total=sorted.reduce((s,e)=>s+getEventPrice(e),0);
+    lines.push(csvRow(['','Total','',formatPriceCSV(total),'','','']));
+    const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+    triggerDownload(blob,'missions-'+presta.name.replace(/\s+/g,'-')+'-'+(monthVal||'all')+'.csv');
+  });
+
+  // ---------- Owners rendering ----------
+  function renderOwners(){
+    const container=document.getElementById('ownersContainer'); if(!container) return;
+    container.innerHTML='';
+
+    // --- Mode Planning du mois ---
+    if(ownerViewMode==='planning'){
+      const monthVal=document.getElementById('exportMonthPicker').value;
+      if(!monthVal){ container.innerHTML=`<div class="empty-state"><div class="display">Choisissez un mois</div><p>Sélectionnez un mois dans la barre ci-dessus pour afficher le planning.</p></div>`; return; }
+      const monthEvents=events.filter(e=>e.date&&e.date.startsWith(monthVal)).sort((a,b)=>{ if(a.date!==b.date) return a.date<b.date?-1:1; return (a.time||'')<(b.time||'')?-1:((a.time||'')>(b.time||'')?1:0); });
+      if(monthEvents.length===0){ container.innerHTML=`<div class="empty-state"><div class="display">Aucun événement ce mois</div><p>Aucun événement trouvé pour ce mois.</p></div>`; return; }
+      const today=todayStr(); let lastDate=null;
+      monthEvents.forEach(ev=>{
+        if(ev.date!==lastDate){
+          lastDate=ev.date;
+          const d=new Date(ev.date+"T00:00:00");
+          const group=document.createElement('div'); group.className='day-group';
+          const label=document.createElement('div');
+          label.className='day-label'+(ev.date===today?' today-label':'');
+          let meta=capitalize(DAYS_FULL[d.getDay()])+" "+d.getDate()+" "+MONTHS[d.getMonth()]+" "+d.getFullYear();
+          if(ev.date===today) meta="Aujourd'hui · "+meta;
+          label.innerHTML=`<span class="day-num">${d.getDate()}</span><span class="day-meta">${meta}</span>`;
+          group.appendChild(label);
+          container.appendChild(group);
+        }
+        container.lastChild.appendChild(buildEventCard(ev));
+      });
+      return;
+    }
+
+    // --- Modes Propriétaires ---
+    const s=ownerSearchTerm.toLowerCase();
+    const list=owners.filter(o=>!s||o.name.toLowerCase().includes(s)||o.properties.some(p=>p.address.toLowerCase().includes(s)));
+
+    if(owners.length===0){
+      container.innerHTML=`<div class="empty-state"><div class="display">Aucun propriétaire</div><p>Ajoutez un propriétaire pour regrouper ses logements.</p><button class="btn btn-primary" id="emptyOwnerBtn">＋ Nouveau propriétaire</button></div>`;
+      document.getElementById('emptyOwnerBtn').addEventListener('click',()=>openOwnerModal());
+      return;
+    }
+    if(list.length===0){
+      container.innerHTML=`<div class="empty-state"><div class="display">Aucun résultat</div><p>Aucun propriétaire ne correspond à cette recherche.</p></div>`;
+      return;
+    }
+
+    list.forEach(owner=>{
+      const card=document.createElement('div'); card.className='owner-card';
+      const head=document.createElement('div'); head.className='owner-card-head';
+      const nbProps=owner.properties.length;
+      head.innerHTML=`<h3>${escapeHtml(owner.name)}${owner.contact?`<span style="font-size:0.8rem;color:var(--steel);font-weight:400;margin-left:10px;">${escapeHtml(owner.contact)}</span>`:''}<span style="font-size:0.78rem;font-weight:400;font-family:sans-serif;color:var(--steel);margin-left:12px;background:var(--mist);border-radius:999px;padding:2px 10px;">${nbProps} logement${nbProps>1?'s':''}</span></h3>`;
+      const headActions=document.createElement('div'); headActions.style.cssText='display:flex;gap:8px;flex-shrink:0;';
+      const addPropBtn=document.createElement('button'); addPropBtn.className='btn btn-ghost on-light btn-sm'; addPropBtn.textContent='＋ Logement';
+      addPropBtn.addEventListener('click',()=>openPropertyModal(owner.id)); headActions.appendChild(addPropBtn);
+      const editOBtn=document.createElement('div'); editOBtn.className='icon-btn'; editOBtn.title='Modifier'; editOBtn.textContent='✎';
+      editOBtn.addEventListener('click',()=>openOwnerModal(owner)); headActions.appendChild(editOBtn);
+      const delOBtn=document.createElement('div'); delOBtn.className='icon-btn'; delOBtn.title='Supprimer'; delOBtn.textContent='🗑';
+      delOBtn.addEventListener('click',()=>{ if(confirm('Supprimer ce propriétaire et tous ses logements ?')){ deleteOwner(owner.id); renderOwners(); refreshOwnerFilterSelect(); } });
+      headActions.appendChild(delOBtn);
+      head.appendChild(headActions); card.appendChild(head);
+
+      if(ownerViewMode==='logements'){
+        if(owner.properties.length===0){
+          const p=document.createElement('p'); p.style.cssText='font-size:0.85rem;color:var(--steel);margin:0;'; p.textContent='Aucun logement. Ajoutez-en un avec "+ Logement".'; card.appendChild(p);
+        }else{
+          owner.properties.forEach(prop=>{
+            const row=document.createElement('div'); row.className='prop-row';
+            row.style.display='flex'; row.style.alignItems='center'; row.style.justifyContent='space-between'; row.style.gap='10px';
+            row.innerHTML=`<div style="min-width:0;flex:1;"><div style="font-size:1rem;font-family:Georgia,'Times New Roman',serif;font-weight:600;">${escapeHtml(prop.name||prop.address)}</div><div style="font-size:0.82rem;color:var(--steel);margin-top:2px;">📍 ${escapeHtml(prop.address)}</div></div><div style="display:flex;align-items:center;gap:10px;flex-shrink:0;"><span class="source-pill">Ménage : ${formatPrice(prop.cleaningPrice)}</span></div>`;
+            const actDiv=row.querySelector('div:last-child');
+            const editPBtn=document.createElement('div'); editPBtn.className='icon-btn'; editPBtn.title='Modifier'; editPBtn.textContent='✎';
+            editPBtn.addEventListener('click',()=>openPropertyModal(owner.id,prop)); actDiv.appendChild(editPBtn);
+            const delPBtn=document.createElement('div'); delPBtn.className='icon-btn'; delPBtn.title='Supprimer'; delPBtn.textContent='🗑';
+            delPBtn.addEventListener('click',()=>{ if(confirm('Supprimer ce logement ?')){ deleteProperty(owner.id,prop.id); renderOwners(); renderAll(); } });
+            actDiv.appendChild(delPBtn);
+            card.appendChild(row);
+          });
+        }
+      }
+      container.appendChild(card);
+    });
+  }
+
+  function buildMissionsHtml(evts){
+    if(evts.length===0) return '';
+    const sorted=evts.sort((a,b)=>(a.date+(a.time||''))<(b.date+(b.time||''))?-1:1);
+    const html=sorted.map(ev=>{
+      const tc='tag-'+(ev.type||'autre'), tl=TYPE_LABELS[ev.type]||ev.type;
+      let extras='';
+      if(ev.type==='service'){
+        if(ev.hasCi) extras+=`<span class="tag tag-ci" style="font-size:0.62rem;">CI</span>`;
+        if(ev.hasCo) extras+=`<span class="tag tag-co" style="font-size:0.62rem;">CO</span>`;
+      }
+      return `<div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;padding:2px 0;"><span class="tag ${tc}" style="margin-left:0;flex-shrink:0;">${tl}</span>${extras}<span style="color:var(--steel);flex-shrink:0;">${formatDateFR(ev.date)}${ev.time?' '+ev.time:''}</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(ev.title)}</span></div>`;
+    }).join('');
+    return `<div style="margin-top:6px;">${html}</div>`;
+  }
+
+  document.getElementById('ownerSearchInput').addEventListener('input',(e)=>{ ownerSearchTerm=e.target.value.trim(); renderOwners(); });
+  document.querySelectorAll('[data-view]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('[data-view]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      ownerViewMode=btn.dataset.view;
+      renderOwners();
+    });
+  });
+
+  // ---------- Owner modal ----------
+  const ownerOverlay=document.getElementById('ownerModalOverlay');
+  function openOwnerModal(owner){
+    document.getElementById('ownerModalTitle').textContent=owner?'Modifier le propriétaire':'Nouveau propriétaire';
+    document.getElementById('ownerId').value=owner?owner.id:'';
+    document.getElementById('ownerName').value=owner?owner.name:'';
+    document.getElementById('ownerContact').value=owner?(owner.contact||''):'';
+    document.getElementById('deleteOwnerBtn').style.display=owner?'inline-flex':'none';
+    ownerOverlay.classList.add('show');
+    setTimeout(()=>document.getElementById('ownerName').focus(),50);
+  }
+  function closeOwnerModal(){ ownerOverlay.classList.remove('show'); }
+  document.getElementById('newOwnerBtn').addEventListener('click',()=>openOwnerModal());
+  document.getElementById('cancelOwnerBtn').addEventListener('click',closeOwnerModal);
+  ownerOverlay.addEventListener('click',(e)=>{ if(e.target===ownerOverlay) closeOwnerModal(); });
+  document.getElementById('ownerForm').addEventListener('submit',(e)=>{
+    e.preventDefault();
+    const id=document.getElementById('ownerId').value;
+    const data={name:document.getElementById('ownerName').value.trim(),contact:document.getElementById('ownerContact').value.trim()};
+    if(id) updateOwner(id,data); else addOwner(data);
+    closeOwnerModal(); renderOwners(); refreshOwnerFilterSelect();
+  });
+  document.getElementById('deleteOwnerBtn').addEventListener('click',()=>{
+    const id=document.getElementById('ownerId').value;
+    if(id&&confirm('Supprimer ce propriétaire et tous ses logements ?')){ deleteOwner(id); closeOwnerModal(); renderOwners(); refreshOwnerFilterSelect(); }
+  });
+
+  // ---------- Property modal ----------
+  const propertyOverlay=document.getElementById('propertyModalOverlay');
+  function openPropertyModal(ownerId,prop){
+    document.getElementById('propertyModalTitle').textContent=prop?'Modifier le logement':'Nouveau logement';
+    document.getElementById('propertyId').value=prop?prop.id:'';
+    document.getElementById('propertyOwnerId').value=ownerId;
+    document.getElementById('propertyName').value=prop?(prop.name||''):'';
+    document.getElementById('propertyAddress').value=prop?prop.address:'';
+    document.getElementById('propertyCleaningPrice').value=prop?prop.cleaningPrice:'';
+    document.getElementById('deletePropertyBtn').style.display=prop?'inline-flex':'none';
+    propertyOverlay.classList.add('show');
+    setTimeout(()=>document.getElementById('propertyAddress').focus(),50);
+  }
+  function closePropertyModal(){ propertyOverlay.classList.remove('show'); }
+  document.getElementById('cancelPropertyBtn').addEventListener('click',closePropertyModal);
+  propertyOverlay.addEventListener('click',(e)=>{ if(e.target===propertyOverlay) closePropertyModal(); });
+  document.getElementById('propertyForm').addEventListener('submit',(e)=>{
+    e.preventDefault();
+    const ownerId=document.getElementById('propertyOwnerId').value, propId=document.getElementById('propertyId').value;
+    const data={name:document.getElementById('propertyName').value.trim(),address:document.getElementById('propertyAddress').value.trim(),cleaningPrice:parseFloat(document.getElementById('propertyCleaningPrice').value)||0};
+    if(propId) updateProperty(ownerId,propId,data); else addProperty(ownerId,data);
+    closePropertyModal(); renderOwners(); renderAll();
+  });
+  document.getElementById('deletePropertyBtn').addEventListener('click',()=>{
+    const ownerId=document.getElementById('propertyOwnerId').value, propId=document.getElementById('propertyId').value;
+    if(propId&&confirm('Supprimer ce logement ?')){ deleteProperty(ownerId,propId); closePropertyModal(); renderOwners(); renderAll(); }
+  });
+
+  // ---------- Monthly CSV export ----------
+  (function(){ const now=new Date(); document.getElementById('exportMonthPicker').value=now.getFullYear()+"-"+pad(now.getMonth()+1); })();
+  document.getElementById('exportMonthPicker').addEventListener('change',()=>{ if(ownerViewMode==='planning') renderOwners(); });
+  document.getElementById('exportMonthBtn').addEventListener('click',()=>{
+    const monthVal=document.getElementById('exportMonthPicker').value;
+    if(!monthVal){alert('Choisissez un mois.');return;}
+    if(owners.length===0){alert('Aucun propriétaire enregistré.');return;}
+    const [mYear,mMonth]=monthVal.split('-').map(Number);
+    const monthEvents=events.filter(e=>e.date&&e.date.startsWith(monthVal)&&e.propertyId);
+
+    // Also collect CI/CO virtual events from cleanings
+    const cicoEvents=[];
+    monthEvents.forEach(ev=>{
+      if(ev.type!=='service') return;
+      const f=findPropertyById(ev.propertyId);
+      const addr=f?(f.property.name?f.property.name+' — '+f.property.address:f.property.address):(ev.location||ev.title||'');
+      if(ev.hasCi&&ev.ciExport&&ev.ciDate){
+        cicoEvents.push({date:ev.ciDate,time:ev.ciTime||'',label:'Check-in — '+addr,price:ev.ciPrice!=null?ev.ciPrice:DEFAULT_PRICE,propertyId:ev.propertyId,_virtual:true});
+      }
+      if(ev.hasCo&&ev.coExport&&ev.coDate){
+        cicoEvents.push({date:ev.coDate,time:ev.coTime||'',label:'Check-out — '+addr,price:ev.coPrice!=null?ev.coPrice:DEFAULT_PRICE,propertyId:ev.propertyId,_virtual:true});
+      }
+    });
+
+    if(monthEvents.length===0&&cicoEvents.length===0){alert('Aucune mission liée à un logement pour ce mois.');return;}
+    const lines=[]; let any=false;
+
+    owners.forEach(owner=>{
+      const propIds=new Set(owner.properties.map(p=>p.id));
+      const ownerEvts=monthEvents.filter(e=>propIds.has(e.propertyId));
+      const ownerCico=cicoEvents.filter(e=>propIds.has(e.propertyId));
+      if(ownerEvts.length===0&&ownerCico.length===0) return;
+      any=true;
+
+      // Build flat list of all rows
+      const rows=[];
+      ownerEvts.forEach(ev=>{
+        const f=findPropertyById(ev.propertyId);
+        const addr=f?(f.property.name?f.property.name+' — '+f.property.address:f.property.address):(ev.location||ev.title||'');
+        const typeLabel=ev.type==='service'?'Ménage':(TYPE_LABELS[ev.type]||ev.type);
+        rows.push({date:ev.date,time:ev.time||'',label:typeLabel+' — '+addr,price:getEventPrice(ev)});
+        // Inline CI/CO rows right after the cleaning
+        if(ev.type==='service'){
+          if(ev.hasCi&&ev.ciExport){
+            const d=ev.ciDate||ev.date;
+            rows.push({date:d,time:ev.ciTime||'',label:'Check-in — '+addr,price:ev.ciPrice!=null?ev.ciPrice:DEFAULT_PRICE});
+          }
+          if(ev.hasCo&&ev.coExport){
+            const d=ev.coDate||ev.date;
+            rows.push({date:d,time:ev.coTime||'',label:'Check-out — '+addr,price:ev.coPrice!=null?ev.coPrice:DEFAULT_PRICE});
+          }
+        }
+      });
+
+      // Sort by date then time
+      rows.sort((a,b)=>{
+        if(a.date!==b.date) return a.date<b.date?-1:1;
+        return (a.time||'')<(b.time||'')?-1:((a.time||'')>(b.time||'')?1:0);
+      });
+
+      // Group by date
+      const byDate=new Map();
+      rows.forEach(r=>{ if(!byDate.has(r.date)) byDate.set(r.date,[]); byDate.get(r.date).push(r); });
+
+      // Header
+      lines.push(csvRow([owner.name]));
+      lines.push(csvRow([capitalize(MONTHS[mMonth-1])+' '+mYear]));
+      lines.push(csvRow(['DATE','ADRESSE','PRIX']));
+
+      let total=0;
+      byDate.forEach((dayRows,date)=>{
+        const d=new Date(date+'T00:00:00');
+        const dayHeader=d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear()+' '+DAYS_FULL[d.getDay()];
+        lines.push(csvRow([dayHeader,'','']));
+        dayRows.forEach(r=>{
+          lines.push(csvRow([r.time,r.label,formatPriceCSV(r.price)]));
+          total+=r.price;
+        });
+      });
+
+      lines.push(csvRow(['','Total',formatPriceCSV(total)]));
+      lines.push(csvRow(['']));
+    });
+
+    if(!any){alert('Aucune mission liée à un logement pour ce mois.');return;}
+    const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+    triggerDownload(blob,'missions-'+monthVal+'.csv');
+  });
+
+  function csvRow(fields){ return fields.map(f=>{ const s=String(f==null?'':f); return /[;"\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(';'); }
+
+  // ---------- ICS export ----------
+  document.getElementById('exportBtn').addEventListener('click',()=>{
+    if(events.length===0){showImportStatus('Aucun événement à exporter.',false);return;}
+    const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Planning v2//FR'];
+    events.forEach(ev=>{
+      const dt=ev.date.replace(/-/g,'')+'T'+(ev.time?ev.time.replace(':','')+'00':'090000');
+      lines.push('BEGIN:VEVENT','UID:'+ev.id+'@planning-v2','DTSTART:'+dt,'SUMMARY:'+esc(ev.title));
+      if(ev.location) lines.push('LOCATION:'+esc(ev.location));
+      const d=[TYPE_LABELS[ev.type]||'',ev.details].filter(Boolean).join(' — ');
+      if(d) lines.push('DESCRIPTION:'+esc(d));
+      lines.push('END:VEVENT');
+    });
+    lines.push('END:VCALENDAR');
+    triggerDownload(new Blob([lines.join('\r\n')],{type:'text/calendar'}),'planning.ics');
+  });
+  function esc(s){ return String(s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n'); }
+
+  function triggerDownload(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+
+  // ---------- Backup ----------
+  document.getElementById('exportBackupBtn').addEventListener('click',()=>{
+    const bk={type:'planning-v2-backup',version:2,exportedAt:new Date().toISOString(),events,owners,prestataires};
+    const now=new Date();
+    triggerDownload(new Blob([JSON.stringify(bk,null,2)],{type:'application/json'}),'sauvegarde-planning-'+now.getFullYear()+pad(now.getMonth()+1)+pad(now.getDate())+'.json');
+    showBackupStatus('Sauvegarde téléchargée.',true);
+  });
+  const backupInput=document.getElementById('backupInput');
+  document.getElementById('importBackupBtn').addEventListener('click',()=>backupInput.click());
+  backupInput.addEventListener('change',(e)=>{
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const data=JSON.parse(reader.result);
+        if(!data||(!Array.isArray(data.events)&&!Array.isArray(data.owners))){showBackupStatus('Fichier invalide.',false);return;}
+        const replace=confirm('Remplacer toutes les données actuelles ?\n\nOK = remplacer\nAnnuler = fusionner');
+        if(replace){ events=Array.isArray(data.events)?data.events:[]; owners=Array.isArray(data.owners)?data.owners:[]; prestataires=Array.isArray(data.prestataires)?data.prestataires:[]; }
+        else{
+          const eIds=new Set(events.map(e=>e.id)); (data.events||[]).forEach(e=>{if(!eIds.has(e.id)) events.push(e);});
+          const oIds=new Set(owners.map(o=>o.id)); (data.owners||[]).forEach(o=>{if(!oIds.has(o.id)) owners.push(o);});
+          const pIds=new Set(prestataires.map(p=>p.id)); (data.prestataires||[]).forEach(p=>{if(!pIds.has(p.id)) prestataires.push(p);});
+        }
+        saveEvents(); saveOwners(); savePrestas(); renderAll();
+        showBackupStatus('Sauvegarde restaurée ('+(data.events||[]).length+' événements, '+(data.owners||[]).length+' propriétaires, '+(data.prestataires||[]).length+' prestataires).',true);
+      }catch(err){showBackupStatus('Erreur : '+err.message,false);}
+    };
+    reader.readAsText(file); backupInput.value='';
+  });
+  function showBackupStatus(msg,ok){ const el=document.getElementById('backupStatus'); el.textContent=msg; el.className='import-status show '+(ok?'ok':'err'); }
+
+  // ---------- Init ----------
+  renderAll();
+
+  // ---------- PWA : icône + manifest + service worker ----------
+  (function(){
+    // Génère une icône via canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0,0,512,512);
+    grad.addColorStop(0,'#1B3A4B'); grad.addColorStop(0.6,'#3F6E84'); grad.addColorStop(1,'#C9A876');
+    ctx.fillStyle = grad; ctx.beginPath();
+    ctx.roundRect(0,0,512,512,80); ctx.fill();
+    ctx.fillStyle='#F6F3EC'; ctx.font='bold 300px Georgia,serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('P',256,280);
+    const iconUrl = canvas.toDataURL('image/png');
+
+    // Lien icône Apple
+    document.getElementById('appleTouchIcon').href = iconUrl;
+
+    // Manifest PWA via blob
+    const manifest = {
+      name: 'Planning — Conciergerie',
+      short_name: 'Planning',
+      description: 'Gestion de planning de conciergerie',
+      start_url: '.',
+      display: 'standalone',
+      background_color: '#0E2233',
+      theme_color: '#0E2233',
+      orientation: 'portrait',
+      icons: [
+        { src: iconUrl, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+      ]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+    const manifestUrl = URL.createObjectURL(manifestBlob);
+    const manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest'; manifestLink.href = manifestUrl;
+    document.head.appendChild(manifestLink);
+
+    // Service worker via blob (cache offline)
+    if('serviceWorker' in navigator){
+      const swCode = `
+        const CACHE = 'planning-v2';
+        self.addEventListener('install', e => {
+          e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/'])));
+          self.skipWaiting();
+        });
+        self.addEventListener('fetch', e => {
+          e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+        });
+      `;
+      const swBlob = new Blob([swCode], {type:'application/javascript'});
+      const swUrl = URL.createObjectURL(swBlob);
+      navigator.serviceWorker.register(swUrl).catch(()=>{});
+    }
+  })();
+})();
+</script>
+</body>
+</html>
