@@ -266,7 +266,30 @@
 
     /* Hide desktop-only elements on mobile */
     .hero-actions .btn:not(:first-child){display:none;}
-    .stats-panel,.import-panel:last-child{display:none;}
+    .stats-panel,.import-panel{display:none;}
+
+    /* Bigger touch targets */
+    .form-row input,.form-row select,.form-row textarea{
+      padding:14px 12px;font-size:1rem;min-height:48px;
+    }
+    select{min-height:48px;}
+    .btn{min-height:44px;}
+    .icon-btn{width:44px;height:44px;}
+    .filter-chip{min-height:40px;}
+
+    /* Properties/owners cards full width */
+    .prop-card,.owner-card{margin-bottom:10px;}
+
+    /* Source pill hidden on mobile */
+    .source-pill{display:none;}
+
+    /* Second toolbar stacked */
+    .toolbar + .toolbar{margin-top:-8px;border-top:none;border-radius:0 0 12px 12px;}
+
+    /* Safe area bottom */
+    body{padding-bottom:calc(64px + env(safe-area-inset-bottom));}
+    .bottom-nav{height:calc(64px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);}
+    .fab{bottom:calc(76px + env(safe-area-inset-bottom));}
   }
 
   @media(min-width:769px){
@@ -332,13 +355,43 @@
 <!-- Bottom navigation (mobile) -->
 <nav class="bottom-nav" id="bottomNav">
   <a href="#" class="tab-link active" data-tab="planning"><span class="icon">📅</span>Planning</a>
-  <a href="#" class="tab-link" data-tab="owners"><span class="icon">👤</span>Propriétaires</a>
-  <a href="#" class="tab-link" data-tab="properties"><span class="icon">🏠</span>Propriétés</a>
-  <a href="#" class="tab-link" data-tab="prestataires"><span class="icon">🔧</span>Prestataires</a>
+  <a href="#" class="tab-link" data-tab="owners"><span class="icon">👤</span>Proprio</a>
+  <a href="#" class="tab-link" data-tab="properties"><span class="icon">🏠</span>Logements</a>
+  <a href="#" class="tab-link" data-tab="prestataires"><span class="icon">🔧</span>Presta.</a>
+  <a href="#" id="dataNavBtn"><span class="icon">☁️</span>Données</a>
 </nav>
 
 <!-- FAB button (mobile) -->
 <button class="fab" id="fabBtn">＋</button>
+
+<!-- ================= DATA SYNC MODAL ================= -->
+<div class="modal-overlay" id="dataSyncOverlay">
+  <div class="modal" style="max-width:480px;">
+    <h2>☁️ Données &amp; Synchronisation</h2>
+    <p style="font-size:0.85rem;color:var(--steel);line-height:1.6;margin-bottom:20px;">Exportez vos données sur un appareil et importez-les sur un autre pour les synchroniser.</p>
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:16px;">
+        <div style="font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--steel);margin-bottom:8px;">📤 Exporter depuis ce téléphone</div>
+        <p style="font-size:0.82rem;color:var(--steel);margin:0 0 12px;line-height:1.5;">Télécharge un fichier .json avec toutes vos données.</p>
+        <button class="btn btn-primary btn-sm" id="syncExportBtn" style="width:100%;justify-content:center;">⇩ Télécharger la sauvegarde</button>
+      </div>
+
+      <div style="background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:16px;">
+        <div style="font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--steel);margin-bottom:8px;">📥 Importer sur ce téléphone</div>
+        <p style="font-size:0.82rem;color:var(--steel);margin:0 0 12px;line-height:1.5;">Sélectionnez le fichier .json exporté depuis un autre appareil.</p>
+        <input type="file" id="syncImportInput" accept=".json" style="display:none;">
+        <button class="btn btn-ghost on-light btn-sm" id="syncImportBtn" style="width:100%;justify-content:center;">📁 Choisir un fichier</button>
+      </div>
+    </div>
+
+    <div class="import-status" id="syncStatus"></div>
+
+    <div class="modal-actions" style="margin-top:16px;">
+      <button type="button" class="btn btn-ghost on-light btn-sm" id="closeSyncBtn">Fermer</button>
+    </div>
+  </div>
+</div>
 
 <div id="view-planning">
   <div class="hero">
@@ -1513,6 +1566,51 @@
   // FAB → nouvel événement
   const fabBtn=document.getElementById('fabBtn');
   if(fabBtn) fabBtn.addEventListener('click',()=>openModal());
+
+  // ---------- Data Sync Modal ----------
+  document.getElementById('dataNavBtn').addEventListener('click',(e)=>{
+    e.preventDefault();
+    document.getElementById('dataSyncOverlay').classList.add('show');
+  });
+  document.getElementById('closeSyncBtn').addEventListener('click',()=>{
+    document.getElementById('dataSyncOverlay').classList.remove('show');
+  });
+  document.getElementById('dataSyncOverlay').addEventListener('click',(e)=>{
+    if(e.target===e.currentTarget) e.currentTarget.classList.remove('show');
+  });
+  document.getElementById('syncExportBtn').addEventListener('click',()=>{
+    const bk={type:'planning-v2-backup',version:2,exportedAt:new Date().toISOString(),events,owners,prestataires};
+    const now=new Date();
+    triggerDownload(new Blob([JSON.stringify(bk,null,2)],{type:'application/json'}),'sauvegarde-planning-'+now.getFullYear()+pad(now.getMonth()+1)+pad(now.getDate())+'.json');
+    const el=document.getElementById('syncStatus');
+    el.textContent='Sauvegarde téléchargée.'; el.className='import-status show ok';
+  });
+  document.getElementById('syncImportBtn').addEventListener('click',()=>document.getElementById('syncImportInput').click());
+  document.getElementById('syncImportInput').addEventListener('change',(e)=>{
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const data=JSON.parse(reader.result);
+        if(!data||(!Array.isArray(data.events)&&!Array.isArray(data.owners))){
+          const el=document.getElementById('syncStatus'); el.textContent='Fichier invalide.'; el.className='import-status show err'; return;
+        }
+        const replace=confirm('Remplacer toutes les données actuelles ?\n\nOK = remplacer\nAnnuler = fusionner');
+        if(replace){ events=Array.isArray(data.events)?data.events:[]; owners=Array.isArray(data.owners)?data.owners:[]; prestataires=Array.isArray(data.prestataires)?data.prestataires:[]; }
+        else{
+          const eIds=new Set(events.map(ev=>ev.id)); (data.events||[]).forEach(ev=>{if(!eIds.has(ev.id)) events.push(ev);});
+          const oIds=new Set(owners.map(o=>o.id)); (data.owners||[]).forEach(o=>{if(!oIds.has(o.id)) owners.push(o);});
+          const pIds=new Set(prestataires.map(p=>p.id)); (data.prestataires||[]).forEach(p=>{if(!pIds.has(p.id)) prestataires.push(p);});
+        }
+        saveEvents(); saveOwners(); savePrestas(); renderAll();
+        const el=document.getElementById('syncStatus');
+        el.textContent='Données importées ('+(data.events||[]).length+' événements).'; el.className='import-status show ok';
+      }catch(err){
+        const el=document.getElementById('syncStatus'); el.textContent='Erreur : '+err.message; el.className='import-status show err';
+      }
+    };
+    reader.readAsText(file); e.target.value='';
+  });
 
   // ---------- Properties rendering ----------
   let propSearch='', propOwnerFilter='';
