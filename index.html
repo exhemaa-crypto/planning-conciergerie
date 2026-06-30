@@ -942,8 +942,34 @@
   function toFirestore(obj) {
     return { fields: { payload: { stringValue: JSON.stringify(obj) } } };
   }
+  // Décodeur valeur native Firestore -> JS
+  function decFs(v){
+    if(v==null) return null;
+    if('stringValue' in v) return v.stringValue;
+    if('integerValue' in v) return parseInt(v.integerValue,10);
+    if('doubleValue' in v) return v.doubleValue;
+    if('booleanValue' in v) return v.booleanValue;
+    if('nullValue' in v) return null;
+    if('arrayValue' in v) return (v.arrayValue.values||[]).map(decFs);
+    if('mapValue' in v){ const o={}; const f=v.mapValue.fields||{}; for(const k in f) o[k]=decFs(f[k]); return o; }
+    return null;
+  }
   function fromFirestore(doc) {
-    try { return JSON.parse(doc.fields.payload.stringValue); } catch(e) { return null; }
+    try {
+      const f = doc.fields;
+      // Format payload (nouveau code REST)
+      if(f && f.payload) return JSON.parse(f.payload.stringValue);
+      // Format natif (ancien code SDK)
+      if(f && (f.events || f.owners)) {
+        return {
+          events: decFs(f.events) || [],
+          owners: decFs(f.owners) || [],
+          prestataires: decFs(f.prestataires) || [],
+          updatedAt: f.updatedAt ? decFs(f.updatedAt) : Date.now()
+        };
+      }
+      return null;
+    } catch(e) { return null; }
   }
 
   let isSyncing = false;        // true pendant qu'on applique le cloud en local (bloque le push)
