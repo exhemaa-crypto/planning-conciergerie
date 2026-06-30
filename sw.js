@@ -1,4 +1,4 @@
-const CACHE = 'planning-v2-cache-v6';
+const CACHE = 'planning-v2-cache-v7';
 const ASSETS = [
   '/planning-conciergerie/',
   '/planning-conciergerie/index.html'
@@ -29,14 +29,17 @@ self.addEventListener('fetch', e => {
     return; // laisse passer directement au réseau, sans cache
   }
 
-  // Cache uniquement les fichiers de l'app (coquille hors-ligne)
+  // RÉSEAU D'ABORD : toujours récupérer la dernière version en ligne,
+  // et se rabattre sur le cache uniquement si hors-ligne.
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+    fetch(e.request).then(res => {
       if (res && res.status === 200) {
         const clone = res.clone();
         caches.open(CACHE).then(c => c.put(e.request, clone));
       }
       return res;
-    }).catch(() => caches.match('/planning-conciergerie/')))
+    }).catch(() =>
+      caches.match(e.request).then(r => r || caches.match('/planning-conciergerie/'))
+    )
   );
 });

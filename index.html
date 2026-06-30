@@ -2514,6 +2514,41 @@
     }
   }, 2000);
 
+  // ---------- Vérification des mises à jour ----------
+  const APP_VERSION = 7; // bumpé à chaque déploiement
+  function showUpdateBanner(){
+    if(document.getElementById('updateBanner')) return;
+    const b=document.createElement('div');
+    b.id='updateBanner';
+    b.style.cssText='position:fixed;top:0;left:0;right:0;background:var(--gold);color:var(--ink);padding:12px 16px;text-align:center;font-size:0.9rem;font-weight:600;z-index:1000;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 2px 10px rgba(14,34,51,0.3);';
+    b.innerHTML='🎉 Nouvelle version disponible <button id="updateNowBtn" style="background:var(--ink);color:var(--cream);border:none;border-radius:20px;padding:7px 18px;font-weight:600;cursor:pointer;font-family:inherit;">Mettre à jour</button>';
+    document.body.appendChild(b);
+    document.getElementById('updateNowBtn').addEventListener('click',doUpdate);
+  }
+  async function doUpdate(){
+    const btn=document.getElementById('updateNowBtn');
+    if(btn) btn.textContent='Mise à jour…';
+    try{
+      if('serviceWorker' in navigator){
+        const rs=await navigator.serviceWorker.getRegistrations();
+        await Promise.all(rs.map(r=>r.unregister()));
+      }
+      const ks=await caches.keys();
+      await Promise.all(ks.map(k=>caches.delete(k)));
+    }catch(e){}
+    location.reload();
+  }
+  async function checkForUpdate(){
+    try{
+      const res=await fetch('version.json?t='+Date.now(),{cache:'no-store'});
+      if(!res.ok) return;
+      const data=await res.json();
+      if(data && typeof data.version==='number' && data.version>APP_VERSION){ showUpdateBanner(); }
+    }catch(e){}
+  }
+  checkForUpdate();
+  setInterval(checkForUpdate, 120000); // re-vérifie toutes les 2 minutes
+
   // ---------- PWA : icône + manifest + service worker ----------
   (function(){
     // Génère une icône via canvas
