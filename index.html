@@ -946,11 +946,15 @@
     try { return JSON.parse(doc.fields.payload.stringValue); } catch(e) { return null; }
   }
 
-  let isSyncing = false;
-  let lastRemoteTs = 0;
+  let isSyncing = false;        // true pendant qu'on applique le cloud en local (bloque le push)
+  let initialSyncDone = false;  // true après le premier pull réussi
+
+  function isEmpty(e,o,p){ return (!e||!e.length)&&(!o||!o.length)&&(!p||!p.length); }
 
   async function pushToFirebase(events, owners, prestataires) {
     if(isSyncing) return;
+    if(!initialSyncDone) return;                       // PROTECTION 1 : jamais pousser avant d'avoir lu le cloud
+    if(isEmpty(events, owners, prestataires)) return;  // PROTECTION 2 : jamais écraser le cloud avec du vide
     try {
       const payload = { events, owners, prestataires, updatedAt: Date.now() };
       await fetch(URL_KEY, {
@@ -958,6 +962,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(toFirestore(payload))
       });
+      localStorage.setItem('planning_v2_sync_ts', String(payload.updatedAt));
     } catch(e) {}
   }
 
@@ -968,24 +973,41 @@
     clearTimeout(el._t); el._t=setTimeout(()=>el.style.opacity='0', 3000);
   }
 
-  function startFirebaseSync(applyState, hasLocalData) {
+  function startFirebaseSync(applyState, getLocalState) {
     async function poll() {
       try {
         const res = await fetch(URL_KEY);
         if(!res.ok){ showSyncStatus('Sync erreur '+res.status); return; }
         const doc = await res.json();
-        if(doc.error){ showSyncStatus('Sync erreur: '+doc.error.message); return; }
-        const data = fromFirestore(doc);
-        if(!data || !data.updatedAt){ showSyncStatus('Pas de données cloud'); return; }
+        if(doc.error){ showSyncStatus('Sync : '+doc.error.message); return; }
+        const data = doc.fields ? fromFirestore(doc) : null;
+        const local = getLocalState();
+        const localEmpty = isEmpty(local.events, local.owners, local.prestataires);
         const localTs = parseInt(localStorage.getItem('planning_v2_sync_ts')||'0');
-        if(data.updatedAt > localTs || !hasLocalData()) {
-          lastRemoteTs = data.updatedAt;
+
+        // Cloud vide ou inexistant
+        if(!data || !data.updatedAt || isEmpty(data.events, data.owners, data.prestataires)) {
+          initialSyncDone = true;
+          if(!localEmpty) {                              // PROTECTION 3 : cloud vide + on a des données → on réamorce le cloud
+            await pushToFirebase(local.events, local.owners, local.prestataires);
+            showSyncStatus('✓ Données envoyées au cloud');
+          } else {
+            showSyncStatus('Cloud vide');
+          }
+          return;
+        }
+
+        if(data.updatedAt > localTs) {
+          // Le cloud est plus récent → on l'adopte
           isSyncing = true;
           applyState(data.events||[], data.owners||[], data.prestataires||[]);
           localStorage.setItem('planning_v2_sync_ts', String(data.updatedAt));
           isSyncing = false;
+          initialSyncDone = true;
           showSyncStatus('✓ Synchronisé — '+(data.events||[]).length+' événements');
         } else {
+          // Local à jour. Si on a des données et le cloud est plus ancien, on s'assure qu'il les a.
+          initialSyncDone = true;
           showSyncStatus('✓ À jour');
         }
       } catch(e) { showSyncStatus('Sync hors ligne'); }
@@ -2461,10 +2483,8 @@
           save(STORAGE_KEY, events); save(OWNERS_KEY, owners); save(PRESTA_KEY, prestataires);
           renderAll();
         },
-        ()=> events.length > 0 || owners.length > 0
+        ()=> ({events, owners, prestataires})
       );
-      // Ne pousse vers cloud que si on a des données locales
-      if(events.length > 0 || owners.length > 0) syncToCloud();
     }
   }, 2000);
 
