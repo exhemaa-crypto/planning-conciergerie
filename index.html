@@ -2422,21 +2422,14 @@
     manifestLink.rel = 'manifest'; manifestLink.href = manifestUrl;
     document.head.appendChild(manifestLink);
 
-    // Service worker via blob (cache offline)
+    // Service worker (cache offline)
     if('serviceWorker' in navigator){
-      const swCode = `
-        const CACHE = 'planning-v2';
-        self.addEventListener('install', e => {
-          e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/'])));
-          self.skipWaiting();
-        });
-        self.addEventListener('fetch', e => {
-          e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
-        });
-      `;
-      const swBlob = new Blob([swCode], {type:'application/javascript'});
-      const swUrl = URL.createObjectURL(swBlob);
-      navigator.serviceWorker.register(swUrl).catch(()=>{});
+      const swPath = location.hostname.includes('github.io')
+        ? '/planning-conciergerie/sw.js'
+        : null;
+      if(swPath){
+        navigator.serviceWorker.register(swPath).catch(()=>{});
+      }
     }
   })();
 })();
