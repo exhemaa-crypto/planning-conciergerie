@@ -126,7 +126,8 @@
   .import-status.err{background:#F6E6E4;color:#A6432F;}
 
   /* ---------- Main column ---------- */
-  .main-col{display:flex;flex-direction:column;gap:24px;}
+  .main-col{display:flex;flex-direction:column;gap:24px;min-width:0;}
+  .layout>*{min-width:0;}
   .toolbar{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--line);padding:18px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
   .search-box{flex:1;min-width:180px;display:flex;align-items:center;gap:10px;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--steel);font-size:0.88rem;}
   .search-box input{border:none;background:none;outline:none;color:var(--ink);font-size:0.88rem;width:100%;font-family:inherit;}
@@ -248,11 +249,13 @@
       padding-bottom:env(safe-area-inset-bottom);
     }
     .bottom-nav a{
-      flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-      gap:3px;color:rgba(246,243,236,0.5);font-size:0.58rem;letter-spacing:0.05em;
-      text-transform:uppercase;text-decoration:none;transition:.15s;padding:8px 4px;
+      flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:3px;color:rgba(246,243,236,0.5);font-size:0.54rem;letter-spacing:0.02em;
+      text-transform:uppercase;text-decoration:none;transition:.15s;padding:8px 2px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
     }
-    .bottom-nav a .icon{font-size:1.3rem;line-height:1;}
+    .bottom-nav a span:not(.icon){overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+    .bottom-nav a .icon{font-size:1.25rem;line-height:1;}
     .bottom-nav a.active{color:var(--gold);}
     .bottom-nav a:hover{color:var(--cream);}
 
@@ -343,6 +346,40 @@
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
   .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;}
 
+  /* ---------- Lock screen ---------- */
+  .lock-screen{position:fixed;inset:0;background:linear-gradient(135deg,#1B3A4B 0%,#2C5066 45%,#3F6E84 78%,#C9A876 100%);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px;}
+  .lock-screen.show{display:flex;}
+  .lock-card{background:var(--paper);border-radius:18px;box-shadow:0 24px 60px -10px rgba(0,0,0,0.4);padding:36px 28px;width:100%;max-width:360px;text-align:center;}
+  .lock-card .lock-icon{font-size:2.4rem;margin-bottom:10px;}
+  .lock-card h2{font-size:1.3rem;margin:0 0 6px;}
+  .lock-card p{font-size:0.85rem;color:var(--steel);margin:0 0 20px;}
+  .lock-card input{width:100%;border:1px solid var(--line);border-radius:12px;padding:14px;font-size:16px;text-align:center;font-family:inherit;color:var(--ink);background:var(--cream);margin-bottom:12px;}
+  .lock-card .lock-error{color:#A6432F;font-size:0.82rem;margin-bottom:10px;display:none;}
+
+  /* ---------- Status badges ---------- */
+  .status-badge{font-size:0.66rem;font-weight:600;padding:3px 9px;border-radius:999px;cursor:pointer;user-select:none;border:1px solid transparent;white-space:nowrap;}
+  .status-todo{background:#F1E6F0;color:#8A4A82;}
+  .status-confirmed{background:#E6EDF1;color:#3E6478;}
+  .status-done{background:#E6F0E8;color:#3F7350;}
+
+  /* ---------- Finance dashboard ---------- */
+  .fin-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px;}
+  .fin-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;}
+  .fin-card .label{font-size:0.74rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--steel);margin-bottom:8px;}
+  .fin-card .num{font-family:Georgia,'Times New Roman',serif;font-size:1.7rem;color:var(--ink);}
+  .fin-table{width:100%;border-collapse:collapse;font-size:0.88rem;}
+  .fin-table th{text-align:left;font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--steel);padding:10px 12px;border-bottom:1px solid var(--line);font-weight:600;}
+  .fin-table td{padding:10px 12px;border-bottom:1px solid var(--line);}
+  .fin-table td.num,.fin-table th.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .fin-table tr:last-child td{border-bottom:none;}
+  .fin-section{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:8px 8px;margin-bottom:18px;overflow-x:auto;}
+  .fin-section h3{font-size:1rem;margin:12px 12px 4px;}
+
+  /* ---------- Checklist ---------- */
+  .checklist-item{display:flex;align-items:center;gap:8px;padding:6px 0;}
+  .checklist-item input[type=text]{flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:0.9rem;font-family:inherit;background:var(--cream);color:var(--ink);}
+  .checklist-item button{border:none;background:#F6E6E4;color:#A6432F;border-radius:8px;width:32px;height:32px;flex:none;cursor:pointer;}
+
   /* CI/CO checkboxes */
   .cico-row{display:flex;gap:20px;margin-top:4px;}
   .cico-label{display:flex;align-items:center;gap:8px;font-size:0.88rem;color:var(--ink);cursor:pointer;user-select:none;}
@@ -360,6 +397,18 @@
 </head>
 <body>
 
+<!-- ================= LOCK SCREEN ================= -->
+<div class="lock-screen" id="lockScreen">
+  <form class="lock-card" id="lockForm">
+    <div class="lock-icon">🔒</div>
+    <h2>Planning</h2>
+    <p>Entrez votre mot de passe pour accéder à l'application.</p>
+    <input type="password" id="lockInput" placeholder="Mot de passe" autocomplete="current-password" autofocus>
+    <div class="lock-error" id="lockError">Mot de passe incorrect.</div>
+    <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Déverrouiller</button>
+  </form>
+</div>
+
 <div class="topbar">
   <div class="topbar-inner">
     <div class="brand">
@@ -371,6 +420,7 @@
       <a href="#" class="tab-link" data-tab="owners">Propriétaires</a>
       <a href="#" class="tab-link" data-tab="properties">Propriétés</a>
       <a href="#" class="tab-link" data-tab="prestataires">Prestataires</a>
+      <a href="#" class="tab-link" data-tab="finances">Finances</a>
     </nav>
     <div class="nav-actions">
       <input type="file" id="importInput" class="file-input" accept=".csv,.ics">
@@ -387,6 +437,7 @@
   <a href="#" class="tab-link" data-tab="owners"><span class="icon">👤</span>Proprio</a>
   <a href="#" class="tab-link" data-tab="properties"><span class="icon">🏠</span>Logements</a>
   <a href="#" class="tab-link" data-tab="prestataires"><span class="icon">🔧</span>Presta.</a>
+  <a href="#" class="tab-link" data-tab="finances"><span class="icon">💰</span>Finances</a>
   <a href="#" id="dataNavBtn"><span class="icon">☁️</span>Données</a>
 </nav>
 
@@ -411,6 +462,13 @@
         <p style="font-size:0.82rem;color:var(--steel);margin:0 0 12px;line-height:1.5;">Sélectionnez le fichier .json exporté depuis un autre appareil.</p>
         <input type="file" id="syncImportInput" accept=".json" style="display:none;">
         <button class="btn btn-ghost on-light btn-sm" id="syncImportBtn" style="width:100%;justify-content:center;">📁 Choisir un fichier</button>
+      </div>
+
+      <div style="background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:16px;">
+        <div style="font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--steel);margin-bottom:8px;">🔐 Mot de passe d'accès</div>
+        <p style="font-size:0.82rem;color:var(--steel);margin:0 0 12px;line-height:1.5;" id="pwStatusText">Aucun mot de passe défini. L'app est accessible à tous ceux qui ont le lien.</p>
+        <input type="password" id="pwSetInput" placeholder="Nouveau mot de passe (vide = désactiver)" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:16px;font-family:inherit;background:var(--paper);color:var(--ink);margin-bottom:10px;">
+        <button class="btn btn-primary btn-sm" id="pwSetBtn" style="width:100%;justify-content:center;">Enregistrer le mot de passe</button>
       </div>
     </div>
 
@@ -673,6 +731,10 @@
         <textarea id="pdNotes" placeholder="Informations supplémentaires, contacts d'urgence…"></textarea>
       </div>
 
+      <div style="font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--steel);margin:16px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line);">🧺 Checklist ménage</div>
+      <div id="checklistEditor"></div>
+      <button type="button" class="btn btn-ghost on-light btn-sm" id="addChecklistItemBtn" style="margin-top:6px;">＋ Ajouter une tâche</button>
+
       <div style="font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--steel);margin:16px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line);">Photos</div>
       <div id="photoPreviewList" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;"></div>
       <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;background:var(--cream);border:1px dashed var(--line);border-radius:10px;padding:10px 16px;font-size:0.85rem;color:var(--steel);">
@@ -718,6 +780,79 @@
   </div>
 </div>
 
+<!-- ================= FINANCES VIEW ================= -->
+<div id="view-finances" style="display:none;">
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">Finances</div>
+      <h1>Tableau de bord</h1>
+      <p>Suivez votre chiffre d'affaires, vos dépenses et le détail par propriétaire et par logement.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" id="addExpenseBtn">＋ Ajouter une dépense</button>
+      </div>
+    </div>
+  </div>
+  <div class="layout" style="grid-template-columns:1fr;">
+    <main class="main-col">
+      <div class="toolbar">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label for="finMonthPicker" style="font-size:0.82rem;color:var(--steel);">Mois :</label>
+          <input type="month" id="finMonthPicker" style="border:1px solid var(--line);background:var(--cream);border-radius:10px;padding:8px 12px;font-size:0.82rem;color:var(--ink);font-family:inherit;outline:none;">
+        </div>
+        <button class="filter-chip active" id="finMonthMode">Par mois</button>
+        <button class="filter-chip" id="finYearMode">Année entière</button>
+      </div>
+      <div id="financesContainer"></div>
+    </main>
+  </div>
+</div>
+
+<!-- ================= EXPENSE MODAL ================= -->
+<div class="modal-overlay" id="expenseModalOverlay">
+  <div class="modal" style="max-width:460px;">
+    <h2 id="expenseModalTitle">Nouvelle dépense</h2>
+    <form id="expenseForm">
+      <input type="hidden" id="expenseId">
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="expenseDate">Date</label>
+          <input type="date" id="expenseDate" required>
+        </div>
+        <div class="form-row">
+          <label for="expenseAmount">Montant (€)</label>
+          <input type="number" id="expenseAmount" min="0" step="0.01" required placeholder="Ex : 25">
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="expenseLabel">Libellé</label>
+        <input type="text" id="expenseLabel" required placeholder="Ex : Produits ménagers, linge…">
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="expenseCategory">Catégorie</label>
+          <select id="expenseCategory">
+            <option value="Consommables">Consommables</option>
+            <option value="Linge">Linge</option>
+            <option value="Maintenance">Maintenance</option>
+            <option value="Transport">Transport</option>
+            <option value="Personnel">Personnel</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="expenseProperty">Logement (optionnel)</label>
+          <select id="expenseProperty"><option value="">— Aucun —</option></select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger btn-sm" id="deleteExpenseBtn" style="display:none;">Supprimer</button>
+        <button type="button" class="btn btn-ghost on-light btn-sm" id="cancelExpenseBtn">Annuler</button>
+        <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ================= PRESTATAIRE MODAL ================= -->
 <div class="modal-overlay" id="prestaModalOverlay">
   <div class="modal">
@@ -760,6 +895,11 @@
   <div class="modal" style="max-width:660px;">
     <h2 id="missionSheetTitle">Fiche de mission</h2>
     <div id="missionSheetContent" style="font-size:0.9rem;line-height:1.7;"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;">
+      <button type="button" class="btn btn-primary btn-sm" id="sendWhatsappBtn" style="background:#25D366;color:#fff;">📲 WhatsApp</button>
+      <button type="button" class="btn btn-ghost on-light btn-sm" id="sendSmsBtn">💬 SMS</button>
+      <button type="button" class="btn btn-ghost on-light btn-sm" id="sendEmailBtn">✉️ Email</button>
+    </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-ghost on-light btn-sm" id="closeMissionSheetBtn">Fermer</button>
       <button type="button" class="btn btn-ghost on-light btn-sm" id="printMissionSheetBtn">🖨 Imprimer</button>
@@ -819,6 +959,31 @@
         <select id="eventPresta">
           <option value="">— Aucun —</option>
         </select>
+      </div>
+
+      <!-- Infos voyageur (arrivées / départs) -->
+      <div class="cico-box" id="guestBox">
+        <label style="display:block;font-size:0.78rem;letter-spacing:0.05em;text-transform:uppercase;color:var(--steel);margin-bottom:10px;">👥 Informations voyageur</label>
+        <div class="form-grid">
+          <div class="form-row" style="margin-bottom:10px;">
+            <label for="eventGuestName">Nom du voyageur</label>
+            <input type="text" id="eventGuestName" placeholder="Ex : M. Martin">
+          </div>
+          <div class="form-row" style="margin-bottom:10px;">
+            <label for="eventGuestCount">Nombre de personnes</label>
+            <input type="number" id="eventGuestCount" min="0" placeholder="Ex : 4">
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row" style="margin-bottom:0;">
+            <label for="eventGuestPhone">Téléphone voyageur</label>
+            <input type="tel" id="eventGuestPhone" placeholder="06 00 00 00 00">
+          </div>
+          <div class="form-row" style="margin-bottom:0;">
+            <label for="eventArrivalTime">Heure prévue</label>
+            <input type="time" id="eventArrivalTime">
+          </div>
+        </div>
       </div>
 
       <!-- CI/CO sur un ménage -->
@@ -994,6 +1159,8 @@
           events: decFs(f.events) || [],
           owners: decFs(f.owners) || [],
           prestataires: decFs(f.prestataires) || [],
+          expenses: f.expenses ? (decFs(f.expenses)||[]) : [],
+          settings: f.settings ? (decFs(f.settings)||{}) : {},
           updatedAt: f.updatedAt ? decFs(f.updatedAt) : Date.now()
         };
       }
@@ -1004,14 +1171,17 @@
   let isSyncing = false;        // true pendant qu'on applique le cloud en local (bloque le push)
   let initialSyncDone = false;  // true après le premier pull réussi
 
-  function isEmpty(e,o,p){ return (!e||!e.length)&&(!o||!o.length)&&(!p||!p.length); }
+  function isEmpty(s){ return (!s.events||!s.events.length)&&(!s.owners||!s.owners.length)&&(!s.prestataires||!s.prestataires.length)&&(!s.expenses||!s.expenses.length); }
 
-  async function pushToFirebase(events, owners, prestataires) {
+  async function pushToFirebase(state) {
     if(isSyncing) return;
-    if(!initialSyncDone) return;                       // PROTECTION 1 : jamais pousser avant d'avoir lu le cloud
-    if(isEmpty(events, owners, prestataires)) return;  // PROTECTION 2 : jamais écraser le cloud avec du vide
+    if(!initialSyncDone) return;            // PROTECTION 1 : jamais pousser avant d'avoir lu le cloud
+    if(isEmpty(state)) return;              // PROTECTION 2 : jamais écraser le cloud avec du vide
     try {
-      const payload = { events, owners, prestataires, updatedAt: Date.now() };
+      const payload = {
+        events: state.events||[], owners: state.owners||[], prestataires: state.prestataires||[],
+        expenses: state.expenses||[], settings: state.settings||{}, updatedAt: Date.now()
+      };
       await fetch(URL_KEY, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -1037,14 +1207,14 @@
         if(doc.error){ showSyncStatus('Sync : '+doc.error.message); return; }
         const data = doc.fields ? fromFirestore(doc) : null;
         const local = getLocalState();
-        const localEmpty = isEmpty(local.events, local.owners, local.prestataires);
+        const localEmpty = isEmpty(local);
         const localTs = parseInt(localStorage.getItem('planning_v2_sync_ts')||'0');
 
         // Cloud vide ou inexistant
-        if(!data || !data.updatedAt || isEmpty(data.events, data.owners, data.prestataires)) {
+        if(!data || !data.updatedAt || isEmpty(data)) {
           initialSyncDone = true;
           if(!localEmpty) {                              // PROTECTION 3 : cloud vide + on a des données → on réamorce le cloud
-            await pushToFirebase(local.events, local.owners, local.prestataires);
+            await pushToFirebase(local);
             showSyncStatus('✓ Données envoyées au cloud');
           } else {
             showSyncStatus('Cloud vide');
@@ -1055,7 +1225,7 @@
         if(data.updatedAt > localTs) {
           // Le cloud est plus récent → on l'adopte
           isSyncing = true;
-          applyState(data.events||[], data.owners||[], data.prestataires||[]);
+          applyState(data);
           localStorage.setItem('planning_v2_sync_ts', String(data.updatedAt));
           isSyncing = false;
           initialSyncDone = true;
@@ -1083,6 +1253,8 @@
   const STORAGE_KEY   = "planning_v2_events";
   const OWNERS_KEY    = "planning_v2_owners";
   const PRESTA_KEY    = "planning_v2_prestataires";
+  const EXPENSES_KEY  = "planning_v2_expenses";
+  const SETTINGS_KEY  = "planning_v2_settings";
   const TYPE_LABELS   = {arrivee:"Arrivée",depart:"Départ",service:"Ménage",autre:"Autre"};
   const TYPE_DOT      = {arrivee:"dot-arr",depart:"dot-dep",service:"dot-svc",autre:"dot-aut"};
   const MONTHS        = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
@@ -1092,6 +1264,8 @@
   let events         = load(STORAGE_KEY, []);
   let owners         = load(OWNERS_KEY,  []);
   let prestataires   = load(PRESTA_KEY,  []);
+  let expenses       = load(EXPENSES_KEY, []);
+  let settings       = load(SETTINGS_KEY, {});
   let prestaSearch   = "";
   let currentMissionPrestaId = null;
   let currentFilter  = "all";
@@ -1108,10 +1282,13 @@
   // ---------- Storage ----------
   function load(key, def){ try{ const r=localStorage.getItem(key); return r?JSON.parse(r):def; }catch(e){return def;} }
   function save(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
-  function syncToCloud(){ if(window.__firebase) window.__firebase.pushToFirebase(events, owners, prestataires); }
+  function currentState(){ return {events, owners, prestataires, expenses, settings}; }
+  function syncToCloud(){ if(window.__firebase) window.__firebase.pushToFirebase(currentState()); }
   function saveEvents(){ save(STORAGE_KEY, events); syncToCloud(); }
   function saveOwners(){ save(OWNERS_KEY,  owners); syncToCloud(); }
   function savePrestas(){ save(PRESTA_KEY, prestataires); syncToCloud(); }
+  function saveExpenses(){ save(EXPENSES_KEY, expenses); syncToCloud(); }
+  function saveSettings(){ save(SETTINGS_KEY, settings); syncToCloud(); }
 
   // ---------- CRUD Prestataires ----------
   function addPresta(d){ const p={id:uid(),name:d.name,phone:d.phone||'',email:d.email||'',specialty:d.specialty||'',notes:d.notes||''}; prestataires.push(p); savePrestas(); return p; }
@@ -1284,6 +1461,20 @@
     });
   }
 
+  const STATUS_LABELS={todo:'À faire', confirmed:'Confirmé', done:'Terminé'};
+  const STATUS_NEXT={todo:'confirmed', confirmed:'done', done:'todo'};
+  const STATUS_CLASS={todo:'status-todo', confirmed:'status-confirmed', done:'status-done'};
+  const STATUS_ICON={todo:'○', confirmed:'◐', done:'✓'};
+  function buildStatusBadge(ev){
+    const st=ev.status||'todo';
+    const b=document.createElement('span');
+    b.className='status-badge '+(STATUS_CLASS[st]||'status-todo');
+    b.textContent=(STATUS_ICON[st]||'○')+' '+(STATUS_LABELS[st]||'À faire');
+    b.title='Cliquer pour changer le statut';
+    b.addEventListener('click',(e)=>{ e.stopPropagation(); const next=STATUS_NEXT[st]||'todo'; updateEvent(ev.id,{status:next}); renderEvents(); renderPrestataires(); });
+    return b;
+  }
+
   function buildEventCard(ev){
     const card=document.createElement('div'); card.className='event-card';
 
@@ -1321,8 +1512,21 @@
       }
     }
     if(ev.prestaId){ const pr=findPrestaById(ev.prestaId); if(pr) metaHtml+=`<span>🔧 ${escapeHtml(pr.name)}</span>`; }
+    // Infos voyageur (arrivées / départs)
+    if(ev.type==='arrivee'||ev.type==='depart'){
+      if(ev.guestName) metaHtml+=`<span>🧳 ${escapeHtml(ev.guestName)}</span>`;
+      if(ev.guestCount) metaHtml+=`<span>👥 ${escapeHtml(String(ev.guestCount))} pers.</span>`;
+      if(ev.arrivalTime) metaHtml+=`<span>🕐 ${escapeHtml(ev.arrivalTime)}</span>`;
+      if(ev.guestPhone) metaHtml+=`<span>📞 ${escapeHtml(ev.guestPhone)}</span>`;
+    }
     if(ev.details) metaHtml+=`<span>📝 ${escapeHtml(ev.details)}</span>`;
     body.innerHTML=`<div class="event-title">${escapeHtml(ev.title)} <span class="tag ${tagClass}">${TYPE_LABELS[ev.type]||'Autre'}</span></div><div class="event-meta">${metaHtml}</div>`;
+
+    // Badge de statut (missions de ménage) — cliquable pour changer
+    if(ev.type==='service'){
+      const titleEl=body.querySelector('.event-title');
+      titleEl.appendChild(buildStatusBadge(ev));
+    }
 
     // Actions
     const actions=document.createElement('div'); actions.className='event-actions';
@@ -1369,6 +1573,10 @@
     document.getElementById('eventCoTime').value=ev?(ev.coTime||''):'';
     document.getElementById('eventCoPrice').value=(ev&&ev.coPrice!=null)?ev.coPrice:'';
     document.getElementById('eventCoExport').checked=!!(ev&&ev.coExport);
+    document.getElementById('eventGuestName').value=ev?(ev.guestName||''):'';
+    document.getElementById('eventGuestCount').value=ev?(ev.guestCount||''):'';
+    document.getElementById('eventGuestPhone').value=ev?(ev.guestPhone||''):'';
+    document.getElementById('eventArrivalTime').value=ev?(ev.arrivalTime||''):'';
     document.getElementById('eventDetails').value=ev?(ev.details||''):'';
     document.getElementById('deleteEventBtn').style.display=ev?'inline-flex':'none';
     updateCicoVisibility();
@@ -1382,6 +1590,8 @@
     const type=document.getElementById('eventType').value;
     document.getElementById('cicoBox').classList.toggle('visible', type==='service');
     document.getElementById('prestaFieldRow').style.display=(type==='service')?'block':'none';
+    // Infos voyageur : pertinentes pour arrivée / départ
+    document.getElementById('guestBox').classList.toggle('visible', type==='arrivee'||type==='depart');
     if(type==='service') populatePrestaSelect(document.getElementById('eventPresta').value);
   }
 
@@ -1465,8 +1675,14 @@
       coTime:type==='service'&&document.getElementById('eventHasCo').checked?document.getElementById('eventCoTime').value:'',
       coPrice:type==='service'&&document.getElementById('eventHasCo').checked?(document.getElementById('eventCoPrice').value===''?null:parseFloat(document.getElementById('eventCoPrice').value)):null,
       coExport:type==='service'&&document.getElementById('eventHasCo').checked?document.getElementById('eventCoExport').checked:false,
+      guestName:document.getElementById('eventGuestName').value.trim(),
+      guestCount:document.getElementById('eventGuestCount').value.trim(),
+      guestPhone:document.getElementById('eventGuestPhone').value.trim(),
+      arrivalTime:document.getElementById('eventArrivalTime').value,
       details:document.getElementById('eventDetails').value.trim()
     };
+    // Statut par défaut pour une nouvelle mission de ménage (édition : statut préservé)
+    if(type==='service' && !id) data.status='todo';
     if(id) updateEvent(id,data); else addEvent(data);
     closeModal(); renderAll();
   });
@@ -1482,9 +1698,10 @@
   document.getElementById('calToday').addEventListener('click',()=>{ calViewDate=new Date(); selectedDate=null; renderCalendar(); renderEvents(); });
 
   // ---------- Filters & search ----------
-  document.querySelectorAll('.filter-chip').forEach(chip=>{
+  // Uniquement les vrais filtres de type (avec data-filter), pas les bascules vue/mois
+  document.querySelectorAll('.filter-chip[data-filter]').forEach(chip=>{
     chip.addEventListener('click',()=>{
-      document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+      document.querySelectorAll('.filter-chip[data-filter]').forEach(c=>c.classList.remove('active'));
       chip.classList.add('active'); currentFilter=chip.dataset.filter; renderEvents();
     });
   });
@@ -1728,12 +1945,14 @@
     document.getElementById('view-owners').style.display=tab==='owners'?'':'none';
     document.getElementById('view-properties').style.display=tab==='properties'?'':'none';
     document.getElementById('view-prestataires').style.display=tab==='prestataires'?'':'none';
+    document.getElementById('view-finances').style.display=tab==='finances'?'':'none';
     // FAB visible only on planning
     const fab=document.getElementById('fabBtn');
     if(fab) fab.style.display=tab==='planning'?'':'none';
     if(tab==='owners') renderOwners();
     if(tab==='properties') renderProperties();
     if(tab==='prestataires') renderPrestataires();
+    if(tab==='finances') renderFinances();
     window.scrollTo(0,0);
   }
 
@@ -1777,13 +1996,14 @@
           const el=document.getElementById('syncStatus'); el.textContent='Fichier invalide.'; el.className='import-status show err'; return;
         }
         const replace=confirm('Remplacer toutes les données actuelles ?\n\nOK = remplacer\nAnnuler = fusionner');
-        if(replace){ events=Array.isArray(data.events)?data.events:[]; owners=Array.isArray(data.owners)?data.owners:[]; prestataires=Array.isArray(data.prestataires)?data.prestataires:[]; }
+        if(replace){ events=Array.isArray(data.events)?data.events:[]; owners=Array.isArray(data.owners)?data.owners:[]; prestataires=Array.isArray(data.prestataires)?data.prestataires:[]; expenses=Array.isArray(data.expenses)?data.expenses:[]; }
         else{
           const eIds=new Set(events.map(ev=>ev.id)); (data.events||[]).forEach(ev=>{if(!eIds.has(ev.id)) events.push(ev);});
           const oIds=new Set(owners.map(o=>o.id)); (data.owners||[]).forEach(o=>{if(!oIds.has(o.id)) owners.push(o);});
           const pIds=new Set(prestataires.map(p=>p.id)); (data.prestataires||[]).forEach(p=>{if(!pIds.has(p.id)) prestataires.push(p);});
+          const xIds=new Set(expenses.map(x=>x.id)); (data.expenses||[]).forEach(x=>{if(!xIds.has(x.id)) expenses.push(x);});
         }
-        saveEvents(); saveOwners(); savePrestas(); renderAll();
+        saveEvents(); saveOwners(); savePrestas(); saveExpenses(); renderAll();
         const el=document.getElementById('syncStatus');
         el.textContent='Données importées ('+(data.events||[]).length+' événements).'; el.className='import-status show ok';
       }catch(err){
@@ -1792,6 +2012,53 @@
     };
     reader.readAsText(file); e.target.value='';
   });
+
+  // ---------- Password lock ----------
+  async function sha256(str){
+    try{
+      const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }catch(e){ return 'plain:'+str; } // repli si crypto.subtle indisponible
+  }
+  function isUnlocked(){ return sessionStorage.getItem('planning_v2_unlocked')==='1'; }
+  function applyLockFromSettings(){
+    const lock=document.getElementById('lockScreen'); if(!lock) return;
+    const hash=settings && settings.pwHash;
+    if(hash && !isUnlocked()){ lock.classList.add('show'); setTimeout(()=>{const i=document.getElementById('lockInput'); if(i) i.focus();},80); }
+    else lock.classList.remove('show');
+    updatePwStatusText();
+  }
+  function updatePwStatusText(){
+    const t=document.getElementById('pwStatusText'); if(!t) return;
+    if(settings && settings.pwHash){ t.textContent='🔒 Un mot de passe est actif. Laissez vide et enregistrez pour le désactiver.'; }
+    else { t.textContent="Aucun mot de passe défini. L'app est accessible à tous ceux qui ont le lien."; }
+  }
+  document.getElementById('lockForm').addEventListener('submit', async(e)=>{
+    e.preventDefault();
+    const val=document.getElementById('lockInput').value;
+    const h=await sha256(val);
+    if(h===settings.pwHash){
+      sessionStorage.setItem('planning_v2_unlocked','1');
+      document.getElementById('lockScreen').classList.remove('show');
+      document.getElementById('lockInput').value='';
+      document.getElementById('lockError').style.display='none';
+    } else {
+      document.getElementById('lockError').style.display='block';
+    }
+  });
+  document.getElementById('pwSetBtn').addEventListener('click', async()=>{
+    const pw=document.getElementById('pwSetInput').value;
+    if(pw){ settings.pwHash=await sha256(pw); }
+    else { delete settings.pwHash; }
+    saveSettings();
+    sessionStorage.setItem('planning_v2_unlocked','1'); // l'appareil qui définit reste déverrouillé
+    document.getElementById('pwSetInput').value='';
+    updatePwStatusText();
+    const el=document.getElementById('syncStatus');
+    el.textContent=pw?'Mot de passe enregistré et synchronisé.':'Mot de passe désactivé.'; el.className='import-status show ok';
+  });
+  // Verrouillage au démarrage (depuis les réglages mis en cache)
+  applyLockFromSettings();
 
   // ---------- Properties rendering ----------
   let propSearch='', propOwnerFilter='';
@@ -1877,6 +2144,16 @@
 
       if(grid.children.length>0) card.appendChild(grid);
 
+      // Checklist ménage
+      const checklist=details.checklist||[];
+      if(checklist.length>0){
+        const clBox=document.createElement('div');
+        clBox.style.cssText='background:var(--cream);border-radius:10px;padding:12px 14px;margin-top:12px;';
+        clBox.innerHTML='<div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--steel);margin-bottom:8px;">🧺 Checklist ménage</div>'+
+          checklist.map(it=>`<div style="font-size:0.9rem;padding:3px 0;">☐ ${escapeHtml(it)}</div>`).join('');
+        card.appendChild(clBox);
+      }
+
       // Photos
       const photos=(prop.details||{}).photos||[];
       if(photos.length>0){
@@ -1899,7 +2176,7 @@
         card.appendChild(photoWrap);
       }
 
-      if(grid.children.length===0&&photos.length===0){
+      if(grid.children.length===0&&photos.length===0&&checklist.length===0){
         const hint=document.createElement('p'); hint.style.cssText='font-size:0.85rem;color:var(--steel);margin:0;';
         hint.textContent='Aucun détail renseigné. Cliquez sur "Modifier les détails" pour ajouter les informations.';
         card.appendChild(hint);
@@ -1936,9 +2213,27 @@
     document.getElementById('pdCheckoutInstructions').value=d.checkoutInstructions||'';
     document.getElementById('pdNotes').value=d.notes||'';
     currentPhotos=[...(d.photos||[])];
+    currentChecklist=[...(d.checklist||[])];
     renderPhotoPreview();
+    renderChecklistEditor();
     propDetailOverlay.classList.add('show');
   }
+
+  // ---------- Checklist management ----------
+  let currentChecklist = [];
+  function renderChecklistEditor(){
+    const box=document.getElementById('checklistEditor'); if(!box) return;
+    box.innerHTML='';
+    currentChecklist.forEach((item,i)=>{
+      const row=document.createElement('div'); row.className='checklist-item';
+      const inp=document.createElement('input'); inp.type='text'; inp.value=item; inp.placeholder='Ex : Changer les draps';
+      inp.addEventListener('input',()=>{ currentChecklist[i]=inp.value; });
+      const del=document.createElement('button'); del.type='button'; del.textContent='✕';
+      del.addEventListener('click',()=>{ currentChecklist.splice(i,1); renderChecklistEditor(); });
+      row.appendChild(inp); row.appendChild(del); box.appendChild(row);
+    });
+  }
+  document.getElementById('addChecklistItemBtn').addEventListener('click',()=>{ currentChecklist.push(''); renderChecklistEditor(); const inputs=document.querySelectorAll('#checklistEditor input'); if(inputs.length) inputs[inputs.length-1].focus(); });
 
   // ---------- Photo management ----------
   let currentPhotos = []; // array of base64 strings for the open modal
@@ -2012,7 +2307,8 @@
         checkinInstructions:document.getElementById('pdCheckinInstructions').value.trim(),
         checkoutInstructions:document.getElementById('pdCheckoutInstructions').value.trim(),
         notes:document.getElementById('pdNotes').value.trim(),
-        photos:[...currentPhotos]
+        photos:[...currentPhotos],
+        checklist:currentChecklist.map(s=>s.trim()).filter(Boolean)
       }
     };
     updateProperty(ownerId, propId, data);
@@ -2222,6 +2518,49 @@
     lines.push(csvRow(['','Total','',formatPriceCSV(total),'','','']));
     const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
     triggerDownload(blob,'missions-'+presta.name.replace(/\s+/g,'-')+'-'+(monthVal||'all')+'.csv');
+  });
+
+  // ---------- Envoi des missions (WhatsApp / SMS / Email) ----------
+  function buildMissionText(presta){
+    const monthVal=document.getElementById('prestaMoisPicker').value;
+    const [mY,mM]=monthVal?monthVal.split('-').map(Number):[null,null];
+    const missions=events.filter(e=>e.prestaId===presta.id&&e.type==='service'&&(!monthVal||e.date.startsWith(monthVal)));
+    const sorted=[...missions].sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:0));
+    let txt='Bonjour '+presta.name+',\n\nVoici vos missions';
+    if(mY) txt+=' pour '+MONTHS[mM-1]+' '+mY;
+    txt+=' :\n';
+    let total=0; let lastDate=null;
+    sorted.forEach(ev=>{
+      if(ev.date!==lastDate){
+        lastDate=ev.date; const d=new Date(ev.date+'T00:00:00');
+        txt+='\n📅 '+capitalize(DAYS_FULL[d.getDay()])+' '+d.getDate()+' '+MONTHS[d.getMonth()]+'\n';
+      }
+      const f=findPropertyById(ev.propertyId);
+      const addr=f?(f.property.name?f.property.name+' — '+f.property.address:f.property.address):(ev.location||ev.title||'');
+      const price=getEventPrice(ev); total+=price;
+      let extra='';
+      if(ev.hasCi) extra+=' [CI'+(ev.ciTime?' '+ev.ciTime:'')+']';
+      if(ev.hasCo) extra+=' [CO'+(ev.coTime?' '+ev.coTime:'')+']';
+      txt+='• '+(ev.time||'—')+' '+addr+extra+' — '+formatPrice(price)+'\n';
+    });
+    txt+='\nTotal : '+formatPrice(total)+'\n\nMerci !';
+    return txt;
+  }
+  function getCurrentMissionPresta(){ return findPrestaById(currentMissionPrestaId); }
+  document.getElementById('sendWhatsappBtn').addEventListener('click',()=>{
+    const p=getCurrentMissionPresta(); if(!p) return;
+    const phone=(p.phone||'').replace(/[^0-9]/g,'').replace(/^0/,'33'); // FR : 0X -> 33X
+    const url='https://wa.me/'+(phone||'')+'?text='+encodeURIComponent(buildMissionText(p));
+    window.open(url,'_blank');
+  });
+  document.getElementById('sendSmsBtn').addEventListener('click',()=>{
+    const p=getCurrentMissionPresta(); if(!p) return;
+    window.open('sms:'+(p.phone||'')+'?&body='+encodeURIComponent(buildMissionText(p)),'_blank');
+  });
+  document.getElementById('sendEmailBtn').addEventListener('click',()=>{
+    const p=getCurrentMissionPresta(); if(!p) return;
+    const subject='Vos missions'+((()=>{const m=document.getElementById('prestaMoisPicker').value;if(!m)return'';const[y,mm]=m.split('-').map(Number);return' — '+MONTHS[mm-1]+' '+y;})());
+    window.open('mailto:'+(p.email||'')+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(buildMissionText(p)),'_blank');
   });
 
   // ---------- Owners rendering ----------
@@ -2476,6 +2815,185 @@
 
   function csvRow(fields){ return fields.map(f=>{ const s=String(f==null?'':f); return /[;"\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(';'); }
 
+  // ========================================================
+  // ===============  FINANCES & DÉPENSES  ==================
+  // ========================================================
+
+  // ---------- CRUD dépenses ----------
+  function addExpense(d){ const x={id:uid(),date:d.date,amount:Number(d.amount)||0,label:d.label,category:d.category||'Autre',propertyId:d.propertyId||null}; expenses.push(x); saveExpenses(); return x; }
+  function updateExpense(id,d){ const i=expenses.findIndex(x=>x.id===id); if(i>-1){expenses[i]=Object.assign({},expenses[i],d); saveExpenses();} }
+  function deleteExpense(id){ expenses=expenses.filter(x=>x.id!==id); saveExpenses(); }
+
+  // ---------- Revenu d'un événement ----------
+  function eventRevenue(ev){
+    let r=0;
+    if(['arrivee','depart','service'].includes(ev.type)) r+=getEventPrice(ev);
+    if(ev.type==='service'){
+      if(ev.hasCi) r+=(ev.ciPrice!=null?Number(ev.ciPrice):DEFAULT_PRICE);
+      if(ev.hasCo) r+=(ev.coPrice!=null?Number(ev.coPrice):DEFAULT_PRICE);
+    }
+    return r;
+  }
+
+  // ---------- Période ----------
+  let finMode='month';
+  function finPeriodValue(){ const el=document.getElementById('finMonthPicker'); return el?el.value:''; }
+  function inFinPeriod(dateStr){
+    if(!dateStr) return false;
+    const mv=finPeriodValue(); if(!mv) return true;
+    if(finMode==='year') return dateStr.slice(0,4)===mv.slice(0,4);
+    return dateStr.startsWith(mv);
+  }
+  function finPeriodLabel(){
+    const mv=finPeriodValue(); if(!mv) return 'Toutes périodes';
+    const [y,m]=mv.split('-');
+    return finMode==='year' ? ('Année '+y) : (capitalize(MONTHS[parseInt(m,10)-1])+' '+y);
+  }
+
+  // ---------- Rendu du tableau de bord ----------
+  function renderFinances(){
+    const c=document.getElementById('financesContainer'); if(!c) return;
+    const evs=events.filter(e=>inFinPeriod(e.date));
+    const xps=expenses.filter(x=>inFinPeriod(x.date));
+
+    let caClean=0, caCico=0, missions=0;
+    evs.forEach(e=>{
+      if(e.type==='service'){
+        missions++; caClean+=getEventPrice(e);
+        if(e.hasCi) caCico+=(e.ciPrice!=null?Number(e.ciPrice):DEFAULT_PRICE);
+        if(e.hasCo) caCico+=(e.coPrice!=null?Number(e.coPrice):DEFAULT_PRICE);
+      } else if(e.type==='arrivee'||e.type==='depart'){ caCico+=getEventPrice(e); }
+    });
+    const caTotal=caClean+caCico;
+    const depTotal=xps.reduce((s,x)=>s+(Number(x.amount)||0),0);
+    const net=caTotal-depTotal;
+
+    let html='';
+    // Cartes résumé
+    html+=`<div class="fin-cards">
+      <div class="fin-card"><div class="label">Chiffre d'affaires</div><div class="num">${formatPrice(caTotal)}</div></div>
+      <div class="fin-card"><div class="label">Dépenses</div><div class="num" style="color:#A6432F;">${formatPrice(depTotal)}</div></div>
+      <div class="fin-card"><div class="label">Résultat net</div><div class="num" style="color:${net>=0?'#3F7350':'#A6432F'};">${formatPrice(net)}</div></div>
+      <div class="fin-card"><div class="label">Missions de ménage</div><div class="num">${missions}</div></div>
+    </div>`;
+    html+=`<div style="font-size:0.82rem;color:var(--steel);margin:-10px 0 16px;">Période : <strong style="color:var(--ink);">${finPeriodLabel()}</strong> · Ménages ${formatPrice(caClean)} · Check-in/out ${formatPrice(caCico)}</div>`;
+
+    // Par propriétaire
+    const byOwner=new Map();
+    evs.forEach(e=>{
+      const oid=getOwnerIdForEvent(e);
+      const key=oid||'__none__';
+      if(!byOwner.has(key)) byOwner.set(key,{revenue:0,count:0});
+      const o=byOwner.get(key); o.revenue+=eventRevenue(e); if(e.type==='service') o.count++;
+    });
+    html+=`<div class="fin-section"><h3>Par propriétaire</h3><table class="fin-table"><thead><tr><th>Propriétaire</th><th class="num">Missions</th><th class="num">CA</th><th></th></tr></thead><tbody>`;
+    if(byOwner.size===0){ html+=`<tr><td colspan="4" style="color:var(--steel);">Aucune donnée sur cette période.</td></tr>`; }
+    owners.forEach(o=>{
+      const d=byOwner.get(o.id); if(!d) return;
+      html+=`<tr><td>${escapeHtml(o.name)}</td><td class="num">${d.count}</td><td class="num">${formatPrice(d.revenue)}</td><td class="num"><button class="btn btn-ghost on-light btn-sm" data-statement="${o.id}" style="padding:5px 10px;">🧾 Relevé</button></td></tr>`;
+    });
+    if(byOwner.has('__none__')){ const d=byOwner.get('__none__'); html+=`<tr><td style="color:var(--steel);">Sans propriétaire</td><td class="num">${d.count}</td><td class="num">${formatPrice(d.revenue)}</td><td></td></tr>`; }
+    html+=`</tbody></table></div>`;
+
+    // Par logement
+    const byProp=new Map();
+    evs.forEach(e=>{ if(!e.propertyId) return; if(!byProp.has(e.propertyId)) byProp.set(e.propertyId,{revenue:0,count:0}); const d=byProp.get(e.propertyId); d.revenue+=eventRevenue(e); if(e.type==='service')d.count++; });
+    if(byProp.size>0){
+      html+=`<div class="fin-section"><h3>Par logement</h3><table class="fin-table"><thead><tr><th>Logement</th><th class="num">Missions</th><th class="num">CA</th></tr></thead><tbody>`;
+      byProp.forEach((d,pid)=>{ const f=findPropertyById(pid); const name=f?(f.property.name||f.property.address):'?'; html+=`<tr><td>${escapeHtml(name)}</td><td class="num">${d.count}</td><td class="num">${formatPrice(d.revenue)}</td></tr>`; });
+      html+=`</tbody></table></div>`;
+    }
+
+    // Dépenses
+    html+=`<div class="fin-section"><h3>Dépenses</h3><table class="fin-table"><thead><tr><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Logement</th><th class="num">Montant</th><th></th></tr></thead><tbody>`;
+    const sortedX=[...xps].sort((a,b)=>a.date<b.date?1:-1);
+    if(sortedX.length===0){ html+=`<tr><td colspan="6" style="color:var(--steel);">Aucune dépense sur cette période. Cliquez sur « Ajouter une dépense ».</td></tr>`; }
+    sortedX.forEach(x=>{
+      const f=x.propertyId?findPropertyById(x.propertyId):null;
+      const pname=f?(f.property.name||f.property.address):'—';
+      html+=`<tr><td>${formatDateFR(x.date)}</td><td>${escapeHtml(x.label)}</td><td>${escapeHtml(x.category||'')}</td><td>${escapeHtml(pname)}</td><td class="num" style="color:#A6432F;">${formatPrice(x.amount)}</td><td class="num"><span class="icon-btn" data-editexp="${x.id}" style="width:30px;height:30px;font-size:0.8rem;display:inline-flex;">✎</span></td></tr>`;
+    });
+    html+=`</tbody></table></div>`;
+
+    c.innerHTML=html;
+    c.querySelectorAll('[data-statement]').forEach(b=>b.addEventListener('click',()=>printOwnerStatement(b.dataset.statement)));
+    c.querySelectorAll('[data-editexp]').forEach(b=>b.addEventListener('click',()=>openExpenseModal(expenses.find(x=>x.id===b.dataset.editexp))));
+  }
+
+  // ---------- Relevé propriétaire (impression) ----------
+  function printOwnerStatement(ownerId){
+    const owner=owners.find(o=>o.id===ownerId); if(!owner) return;
+    const propIds=new Set(owner.properties.map(p=>p.id));
+    const evs=events.filter(e=>e.propertyId&&propIds.has(e.propertyId)&&inFinPeriod(e.date));
+    if(evs.length===0){ alert('Aucune prestation pour '+owner.name+' sur cette période.'); return; }
+    const rows=[];
+    evs.forEach(ev=>{
+      const f=findPropertyById(ev.propertyId);
+      const addr=f?(f.property.name?f.property.name+' — '+f.property.address:f.property.address):(ev.location||ev.title||'');
+      const typeLabel=ev.type==='service'?'Ménage':(TYPE_LABELS[ev.type]||ev.type);
+      rows.push({date:ev.date,label:typeLabel+' — '+addr,price:getEventPrice(ev)});
+      if(ev.type==='service'){
+        if(ev.hasCi) rows.push({date:ev.ciDate||ev.date,label:'Check-in — '+addr,price:ev.ciPrice!=null?Number(ev.ciPrice):DEFAULT_PRICE});
+        if(ev.hasCo) rows.push({date:ev.coDate||ev.date,label:'Check-out — '+addr,price:ev.coPrice!=null?Number(ev.coPrice):DEFAULT_PRICE});
+      }
+    });
+    rows.sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:0));
+    let total=0;
+    let body=rows.map(r=>{ total+=r.price; return `<tr><td>${formatDateFR(r.date)}</td><td>${escapeHtml(r.label)}</td><td style="text-align:right;">${formatPrice(r.price)}</td></tr>`; }).join('');
+    const w=window.open('','_blank','width=720,height=900');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relevé — ${escapeHtml(owner.name)}</title>
+      <style>body{font-family:Georgia,serif;padding:40px;color:#0E2233;max-width:640px;margin:0 auto;}
+      h1{font-size:1.5rem;margin:0 0 4px;} .sub{color:#5B7C8D;margin-bottom:24px;}
+      table{width:100%;border-collapse:collapse;font-size:0.92rem;} th{text-align:left;border-bottom:2px solid #0E2233;padding:8px 6px;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;}
+      td{padding:8px 6px;border-bottom:1px solid #E2DED4;} tfoot td{border-top:2px solid #0E2233;border-bottom:none;font-weight:700;font-size:1.05rem;padding-top:12px;}
+      @media print{button{display:none;}} button{margin-top:24px;background:#C9A876;border:none;padding:10px 20px;border-radius:8px;font-size:1rem;cursor:pointer;}</style></head>
+      <body><h1>Relevé de prestations</h1><div class="sub">${escapeHtml(owner.name)} · ${finPeriodLabel()}</div>
+      <table><thead><tr><th>Date</th><th>Prestation</th><th style="text-align:right;">Montant</th></tr></thead>
+      <tbody>${body}</tbody>
+      <tfoot><tr><td colspan="2">Total à régler</td><td style="text-align:right;">${formatPrice(total)}</td></tr></tfoot></table>
+      <button onclick="window.print()">🖨 Imprimer / PDF</button></body></html>`);
+    w.document.close();
+  }
+
+  // ---------- Modal dépense ----------
+  const expenseOverlay=document.getElementById('expenseModalOverlay');
+  function populateExpensePropertySelect(selId){
+    const sel=document.getElementById('expenseProperty');
+    sel.innerHTML='<option value="">— Aucun —</option>';
+    owners.forEach(o=>o.properties.forEach(p=>{ const opt=document.createElement('option'); opt.value=p.id; opt.textContent=(p.name?p.name+' — ':'')+p.address; if(p.id===selId)opt.selected=true; sel.appendChild(opt); }));
+  }
+  function openExpenseModal(x){
+    document.getElementById('expenseModalTitle').textContent=x?'Modifier la dépense':'Nouvelle dépense';
+    document.getElementById('expenseId').value=x?x.id:'';
+    document.getElementById('expenseDate').value=x?x.date:(finPeriodValue()?finPeriodValue()+'-01':todayStr());
+    document.getElementById('expenseAmount').value=x?x.amount:'';
+    document.getElementById('expenseLabel').value=x?x.label:'';
+    document.getElementById('expenseCategory').value=x?(x.category||'Autre'):'Consommables';
+    populateExpensePropertySelect(x?x.propertyId:'');
+    document.getElementById('deleteExpenseBtn').style.display=x?'inline-flex':'none';
+    expenseOverlay.classList.add('show');
+  }
+  document.getElementById('addExpenseBtn').addEventListener('click',()=>openExpenseModal());
+  document.getElementById('cancelExpenseBtn').addEventListener('click',()=>expenseOverlay.classList.remove('show'));
+  expenseOverlay.addEventListener('click',(e)=>{ if(e.target===expenseOverlay) expenseOverlay.classList.remove('show'); });
+  document.getElementById('expenseForm').addEventListener('submit',(e)=>{
+    e.preventDefault();
+    const id=document.getElementById('expenseId').value;
+    const d={ date:document.getElementById('expenseDate').value, amount:document.getElementById('expenseAmount').value, label:document.getElementById('expenseLabel').value.trim(), category:document.getElementById('expenseCategory').value, propertyId:document.getElementById('expenseProperty').value||null };
+    if(id) updateExpense(id,d); else addExpense(d);
+    expenseOverlay.classList.remove('show'); renderFinances();
+  });
+  document.getElementById('deleteExpenseBtn').addEventListener('click',()=>{
+    const id=document.getElementById('expenseId').value;
+    if(id&&confirm('Supprimer cette dépense ?')){ deleteExpense(id); expenseOverlay.classList.remove('show'); renderFinances(); }
+  });
+
+  // ---------- Période finances : sélecteur + modes ----------
+  (function(){ const now=new Date(); const el=document.getElementById('finMonthPicker'); if(el) el.value=now.getFullYear()+"-"+pad(now.getMonth()+1); })();
+  document.getElementById('finMonthPicker').addEventListener('change', renderFinances);
+  document.getElementById('finMonthMode').addEventListener('click',()=>{ finMode='month'; document.getElementById('finMonthMode').classList.add('active'); document.getElementById('finYearMode').classList.remove('active'); renderFinances(); });
+  document.getElementById('finYearMode').addEventListener('click',()=>{ finMode='year'; document.getElementById('finYearMode').classList.add('active'); document.getElementById('finMonthMode').classList.remove('active'); renderFinances(); });
+
   // ---------- ICS export ----------
   document.getElementById('exportBtn').addEventListener('click',()=>{
     if(events.length===0){showImportStatus('Aucun événement à exporter.',false);return;}
@@ -2533,18 +3051,21 @@
   setTimeout(()=>{
     if(window.__firebase){
       window.__firebase.startFirebaseSync(
-        (ev, ow, pr)=>{
-          events=ev; owners=ow; prestataires=pr;
+        (data)=>{
+          events=data.events||[]; owners=data.owners||[]; prestataires=data.prestataires||[];
+          expenses=data.expenses||[]; settings=data.settings||{};
           save(STORAGE_KEY, events); save(OWNERS_KEY, owners); save(PRESTA_KEY, prestataires);
+          save(EXPENSES_KEY, expenses); save(SETTINGS_KEY, settings);
+          applyLockFromSettings();
           renderAll();
         },
-        ()=> ({events, owners, prestataires})
+        ()=> currentState()
       );
     }
   }, 2000);
 
   // ---------- Vérification des mises à jour ----------
-  const APP_VERSION = 8; // bumpé à chaque déploiement
+  const APP_VERSION = 9; // bumpé à chaque déploiement
   function showUpdateBanner(){
     if(document.getElementById('updateBanner')) return;
     const b=document.createElement('div');
@@ -2577,6 +3098,39 @@
   }
   checkForUpdate();
   setInterval(checkForUpdate, 120000); // re-vérifie toutes les 2 minutes
+
+  // ---------- Résumé du jour ----------
+  function showDailySummary(){
+    const today=todayStr();
+    if(localStorage.getItem('planning_v2_summary_seen')===today) return;
+    const todays=events.filter(e=>e.date===today);
+    const cleanings=todays.filter(e=>e.type==='service').length;
+    const arr=todays.filter(e=>e.type==='arrivee').length;
+    const dep=todays.filter(e=>e.type==='depart').length;
+    const parts=[];
+    if(cleanings) parts.push(cleanings+' ménage'+(cleanings>1?'s':''));
+    if(arr) parts.push(arr+' arrivée'+(arr>1?'s':''));
+    if(dep) parts.push(dep+' départ'+(dep>1?'s':''));
+    if(parts.length===0) return;
+    if(document.getElementById('dailySummary')) return;
+    const bar=document.createElement('div'); bar.id='dailySummary';
+    bar.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:calc(80px + env(safe-area-inset-bottom));background:var(--ink);color:var(--cream);padding:12px 16px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.3);z-index:90;display:flex;align-items:center;gap:12px;max-width:92vw;font-size:0.88rem;';
+    const span=document.createElement('span'); span.innerHTML="📋 Aujourd'hui : "+parts.join(' · '); bar.appendChild(span);
+    if('Notification' in window && Notification.permission==='default'){
+      const bell=document.createElement('button'); bell.textContent='🔔'; bell.title='Activer les notifications';
+      bell.style.cssText='background:none;border:none;font-size:1rem;cursor:pointer;';
+      bell.addEventListener('click',()=>{ Notification.requestPermission().then(p=>{ if(p==='granted'){ try{ new Notification('Planning', {body:"Aujourd'hui : "+parts.join(' · ')}); }catch(e){} } }); });
+      bar.appendChild(bell);
+    } else if('Notification' in window && Notification.permission==='granted'){
+      try{ new Notification('Planning — Aujourd\'hui', {body:parts.join(' · ')}); }catch(e){}
+    }
+    const closeB=document.createElement('button'); closeB.textContent='✕';
+    closeB.style.cssText='background:none;border:none;color:var(--gold-soft);font-size:1rem;cursor:pointer;';
+    closeB.addEventListener('click',()=>{ localStorage.setItem('planning_v2_summary_seen',today); bar.remove(); });
+    bar.appendChild(closeB);
+    document.body.appendChild(bar);
+  }
+  setTimeout(showDailySummary, 1200);
 
   // ---------- PWA : icône + manifest + service worker ----------
   (function(){
