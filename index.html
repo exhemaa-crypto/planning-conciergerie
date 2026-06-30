@@ -932,6 +932,57 @@
   </div>
 </div>
 
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getFirestore, doc, setDoc, onSnapshot, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB_KhqzC9kSJMUKMmzYhSTuQMYRECCEiqE",
+    authDomain: "planning-conciergerie-52d46.firebaseapp.com",
+    projectId: "planning-conciergerie-52d46",
+    storageBucket: "planning-conciergerie-52d46.firebasestorage.app",
+    messagingSenderId: "697270055741",
+    appId: "1:697270055741:web:1c84a71ca0ad5f46670b54"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const DATA_DOC = doc(db, 'planning', 'main');
+
+  let isSyncing = false;
+
+  async function pushToFirebase(events, owners, prestataires) {
+    if(isSyncing) return;
+    try {
+      await setDoc(DATA_DOC, {
+        events: JSON.parse(JSON.stringify(events)),
+        owners: JSON.parse(JSON.stringify(owners)),
+        prestataires: JSON.parse(JSON.stringify(prestataires)),
+        updatedAt: Date.now(),
+        updatedBy: navigator.userAgent.includes('iPhone')||navigator.userAgent.includes('iPad') ? 'mobile' : 'desktop'
+      });
+    } catch(e) { console.warn('Firebase sync error:', e); }
+  }
+
+  function startFirebaseSync(getState, applyState) {
+    onSnapshot(DATA_DOC, (snap) => {
+      if(!snap.exists()) return;
+      const data = snap.data();
+      if(!data || !data.updatedAt) return;
+      const localTs = parseInt(localStorage.getItem('planning_v2_sync_ts')||'0');
+      if(data.updatedAt > localTs) {
+        isSyncing = true;
+        applyState(data.events||[], data.owners||[], data.prestataires||[]);
+        localStorage.setItem('planning_v2_sync_ts', data.updatedAt);
+        isSyncing = false;
+      }
+    });
+  }
+
+  window.__firebase = { pushToFirebase, startFirebaseSync };
+</script>
+
 <script>
 (function(){
   "use strict";
@@ -964,9 +1015,10 @@
   // ---------- Storage ----------
   function load(key, def){ try{ const r=localStorage.getItem(key); return r?JSON.parse(r):def; }catch(e){return def;} }
   function save(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
-  function saveEvents(){ save(STORAGE_KEY, events); }
-  function saveOwners(){ save(OWNERS_KEY,  owners); }
-  function savePrestas(){ save(PRESTA_KEY, prestataires); }
+  function syncToCloud(){ if(window.__firebase) window.__firebase.pushToFirebase(events, owners, prestataires); }
+  function saveEvents(){ save(STORAGE_KEY, events); syncToCloud(); }
+  function saveOwners(){ save(OWNERS_KEY,  owners); syncToCloud(); }
+  function savePrestas(){ save(PRESTA_KEY, prestataires); syncToCloud(); }
 
   // ---------- CRUD Prestataires ----------
   function addPresta(d){ const p={id:uid(),name:d.name,phone:d.phone||'',email:d.email||'',specialty:d.specialty||'',notes:d.notes||''}; prestataires.push(p); savePrestas(); return p; }
@@ -2383,6 +2435,23 @@
 
   // ---------- Init ----------
   renderAll();
+
+  // ---------- Firebase sync ----------
+  setTimeout(()=>{
+    if(window.__firebase){
+      window.__firebase.startFirebaseSync(
+        ()=>({events, owners, prestataires}),
+        (ev, ow, pr)=>{
+          events=ev; owners=ow; prestataires=pr;
+          save(STORAGE_KEY, events); save(OWNERS_KEY, owners); save(PRESTA_KEY, prestataires);
+          renderAll();
+        }
+      );
+      // Push données locales au démarrage si plus récentes
+      const localTs = parseInt(localStorage.getItem('planning_v2_sync_ts')||'0');
+      if(Date.now() - localTs > 5000) syncToCloud();
+    }
+  }, 1500);
 
   // ---------- PWA : icône + manifest + service worker ----------
   (function(){
