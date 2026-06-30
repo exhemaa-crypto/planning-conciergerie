@@ -1,4 +1,4 @@
-const CACHE = 'planning-v2-cache-v5';
+const CACHE = 'planning-v2-cache-v6';
 const ASSETS = [
   '/planning-conciergerie/',
   '/planning-conciergerie/index.html'
@@ -21,9 +21,18 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+
+  // Ne JAMAIS intercepter : requêtes non-GET, et tout ce qui n'est pas notre propre origine
+  // (en particulier firestore.googleapis.com pour la synchronisation)
+  if (e.request.method !== 'GET' || url.origin !== self.location.origin) {
+    return; // laisse passer directement au réseau, sans cache
+  }
+
+  // Cache uniquement les fichiers de l'app (coquille hors-ligne)
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request).then(res => {
-      if(res && res.status === 200) {
+      if (res && res.status === 200) {
         const clone = res.clone();
         caches.open(CACHE).then(c => c.put(e.request, clone));
       }
