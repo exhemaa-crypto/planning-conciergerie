@@ -26,14 +26,18 @@
     --shadow: 0 8px 24px -8px rgba(14,34,51,0.18);
     --radius:14px;
   }
-  *{box-sizing:border-box;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   html,body{margin:0;padding:0;}
   body{
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
     background:var(--cream);
     color:var(--ink);
     -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
   }
+  img{max-width:100%;height:auto;}
+  input,select,textarea,button{font-family:inherit;}
   h1,h2,h3,.display{font-family:Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:-0.01em;}
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;cursor:pointer;}
@@ -264,13 +268,15 @@
     }
     .fab:active{transform:scale(0.94);}
 
-    /* Hide desktop-only elements on mobile */
-    .hero-actions .btn:not(:first-child){display:none;}
+    /* Boutons hero : on les garde tous, empilés/enroulés (export, etc. accessibles sur mobile) */
+    .hero-actions{flex-direction:column;align-items:stretch;}
+    .hero-actions .btn{width:100%;justify-content:center;}
     .stats-panel,.import-panel{display:none;}
 
-    /* Bigger touch targets */
+    /* Zones tactiles + anti-zoom iOS : tout champ doit faire 16px mini pour éviter le zoom auto */
+    input,select,textarea{font-size:16px !important;}
     .form-row input,.form-row select,.form-row textarea{
-      padding:14px 12px;font-size:1rem;min-height:48px;
+      padding:14px 12px;min-height:48px;
     }
     select{min-height:48px;}
     .btn{min-height:44px;}
@@ -296,6 +302,29 @@
     .fab{display:none;}
   }
 
+  /* Très petits écrans (iPhone SE, ~360px) */
+  @media(max-width:380px){
+    .hero h1{font-size:1.3rem;}
+    .topbar-inner{height:50px;}
+    .nav-actions .btn{padding:7px 10px;font-size:0.75rem;}
+    .bottom-nav a{font-size:0.54rem;}
+    .bottom-nav a .icon{font-size:1.2rem;}
+    .day-label .day-num{font-size:1.15rem;}
+    .cal-grid{font-size:0.72rem;}
+  }
+
+  /* Tablette (iPad portrait) : colonne unique mais marges confortables */
+  @media(min-width:769px) and (max-width:1080px){
+    .layout{padding:0 24px 60px;}
+    .hero-inner{padding:40px 24px 52px;}
+  }
+
+  /* Paysage sur mobile : modales moins hautes */
+  @media(max-width:900px) and (orientation:landscape){
+    .modal{max-height:96vh;}
+    .modal-overlay{align-items:center;}
+  }
+
   /* ---------- Empty state ---------- */
   .empty-state{background:var(--paper);border:1px dashed var(--line);border-radius:var(--radius);padding:60px 30px;text-align:center;color:var(--steel);}
   .empty-state .display{color:var(--ink);font-size:1.3rem;margin-bottom:8px;}
@@ -305,7 +334,7 @@
   /* ---------- Modal ---------- */
   .modal-overlay{position:fixed;inset:0;background:rgba(14,34,51,0.45);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
   .modal-overlay.show{display:flex;}
-  .modal{background:var(--paper);border-radius:var(--radius);box-shadow:0 20px 60px -10px rgba(14,34,51,0.4);width:100%;max-width:540px;padding:28px;max-height:90vh;overflow:auto;}
+  .modal{background:var(--paper);border-radius:var(--radius);box-shadow:0 20px 60px -10px rgba(14,34,51,0.4);width:100%;max-width:540px;padding:28px;max-height:90vh;overflow:auto;-webkit-overflow-scrolling:touch;}
   .modal h2{font-size:1.3rem;margin:0 0 20px;}
   .form-row{margin-bottom:14px;}
   .form-row label{display:block;font-size:0.78rem;letter-spacing:0.05em;text-transform:uppercase;color:var(--steel);margin-bottom:6px;}
@@ -2515,7 +2544,7 @@
   }, 2000);
 
   // ---------- Vérification des mises à jour ----------
-  const APP_VERSION = 7; // bumpé à chaque déploiement
+  const APP_VERSION = 8; // bumpé à chaque déploiement
   function showUpdateBanner(){
     if(document.getElementById('updateBanner')) return;
     const b=document.createElement('div');
