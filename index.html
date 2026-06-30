@@ -380,6 +380,17 @@
   .checklist-item input[type=text]{flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:0.9rem;font-family:inherit;background:var(--cream);color:var(--ink);}
   .checklist-item button{border:none;background:#F6E6E4;color:#A6432F;border-radius:8px;width:32px;height:32px;flex:none;cursor:pointer;}
 
+  /* ---------- Property month calendar ---------- */
+  #propCalGrid .pcal-day{aspect-ratio:1/1;border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:4px 2px;gap:2px;font-size:0.78rem;position:relative;}
+  #propCalGrid .pcal-day.muted{color:#C8C2B4;border-color:transparent;}
+  #propCalGrid .pcal-day.booked{background:var(--gold-soft);}
+  #propCalGrid .pcal-day.today{outline:2px solid var(--ink);outline-offset:-2px;font-weight:700;}
+  #propCalGrid .pcal-day .pdots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;}
+  #propCalGrid .pcal-day .pdot{width:6px;height:6px;border-radius:50%;}
+  .occ-bar{height:10px;border-radius:999px;background:var(--mist);overflow:hidden;}
+  .occ-bar>div{height:100%;background:linear-gradient(90deg,var(--steel),var(--gold));border-radius:999px;}
+  .occ-pill{display:inline-flex;align-items:center;gap:6px;font-size:0.72rem;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--cream);border:1px solid var(--line);color:var(--ink);}
+
   /* CI/CO checkboxes */
   .cico-row{display:flex;gap:20px;margin-top:4px;}
   .cico-label{display:flex;align-items:center;gap:8px;font-size:0.88rem;color:var(--ink);cursor:pointer;user-select:none;}
@@ -636,6 +647,10 @@
             <option value="">Tous les propriétaires</option>
           </select>
         </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <label for="propMonthPicker" style="font-size:0.82rem;color:var(--steel);">📊 Occupation :</label>
+          <input type="month" id="propMonthPicker" style="border:1px solid var(--line);background:var(--cream);border-radius:10px;padding:8px 12px;font-size:0.82rem;color:var(--ink);font-family:inherit;outline:none;">
+        </div>
       </div>
       <div id="propertiesContainer"></div>
     </main>
@@ -756,6 +771,32 @@
         <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ================= PROPERTY CALENDAR MODAL ================= -->
+<div class="modal-overlay" id="propCalOverlay">
+  <div class="modal" style="max-width:640px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;">
+      <h2 id="propCalTitle" style="margin:0;">Planning du mois</h2>
+      <div class="cal-nav">
+        <button type="button" id="propCalPrev">‹</button>
+        <button type="button" id="propCalNext">›</button>
+      </div>
+    </div>
+    <div id="propCalMonthLabel" style="font-size:0.9rem;color:var(--steel);text-transform:capitalize;margin-bottom:14px;"></div>
+    <div id="propCalOccupancy" style="margin-bottom:16px;"></div>
+    <div class="cal-grid" id="propCalGrid">
+      <div class="dow">L</div><div class="dow">M</div><div class="dow">M</div><div class="dow">J</div><div class="dow">V</div><div class="dow">S</div><div class="dow">D</div>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:0.76rem;color:var(--steel);">
+      <span style="display:flex;align-items:center;gap:5px;"><span class="dot dot-arr" style="width:8px;height:8px;border-radius:50%;"></span> Arrivée</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span class="dot dot-dep" style="width:8px;height:8px;border-radius:50%;"></span> Départ</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span class="dot dot-svc" style="width:8px;height:8px;border-radius:50%;"></span> Ménage</span>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost on-light btn-sm" id="closePropCalBtn">Fermer</button>
+    </div>
   </div>
 </div>
 
@@ -2154,6 +2195,98 @@
   document.getElementById('propSearchInput').addEventListener('input',(e)=>{ propSearch=e.target.value.trim().toLowerCase(); renderProperties(); });
   document.getElementById('propOwnerFilter').addEventListener('change',(e)=>{ propOwnerFilter=e.target.value; renderProperties(); });
 
+  // ---------- Occupation & calendrier par logement ----------
+  function finPeriodLabelFor(ym){ if(!ym) return ''; const [y,m]=ym.split('-'); return capitalize(MONTHS[parseInt(m,10)-1])+' '+y; }
+  function shiftMonth(ym,delta){ let [y,m]=ym.split('-').map(Number); m+=delta; while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} return y+'-'+pad(m); }
+
+  // Paire les arrivées et départs d'un logement en séjours (FIFO)
+  function computeStays(propId){
+    const list=events.filter(e=>e.propertyId===propId&&(e.type==='arrivee'||e.type==='depart')&&e.date)
+      .map(e=>({d:e.date,t:e.type}))
+      .sort((a,b)=> a.d<b.d?-1 : a.d>b.d?1 : (a.t==='arrivee'?-1:1));
+    const open=[], stays=[];
+    list.forEach(e=>{
+      if(e.t==='arrivee') open.push(e.d);
+      else { if(open.length) stays.push({start:open.shift(), end:e.d}); else stays.push({start:null, end:e.d}); }
+    });
+    open.forEach(a=>stays.push({start:a, end:null}));
+    return stays;
+  }
+
+  // Taux d'occupation d'un logement pour un mois (nuits réservées / nuits du mois)
+  function occupancyForMonth(propId, ym){
+    if(!ym){ const n=new Date(); ym=n.getFullYear()+'-'+pad(n.getMonth()+1); }
+    const [y,m]=ym.split('-').map(Number);
+    const daysInMonth=new Date(y,m,0).getDate();
+    const monthStart=ym+'-01', monthLastNight=ym+'-'+pad(daysInMonth);
+    const stays=computeStays(propId);
+    const complete=stays.filter(s=>s.start&&s.end); // séjours avec arrivée ET départ connus
+    const booked=new Set();
+    complete.forEach(s=>{
+      let d=new Date(s.start+'T00:00:00'); const endD=new Date(s.end+'T00:00:00'); // nuits = de l'arrivée (incluse) au départ (exclu)
+      while(d<endD){ const ds=dateOnly(d); if(ds>=monthStart&&ds<=monthLastNight) booked.add(ds); d.setDate(d.getDate()+1); }
+    });
+    return {pct:Math.round(booked.size/daysInMonth*100), nights:booked.size, daysInMonth, booked, hasStays:complete.length>0};
+  }
+
+  // ---------- Modal calendrier mensuel par logement ----------
+  let propCalState={propId:null, ym:null};
+  function openPropCalendar(propId, ym){
+    if(!ym){ const n=new Date(); ym=n.getFullYear()+'-'+pad(n.getMonth()+1); }
+    const f=findPropertyById(propId);
+    propCalState={propId, ym};
+    document.getElementById('propCalTitle').textContent='Planning — '+(f?(f.property.name||f.property.address):'');
+    renderPropCalView();
+    document.getElementById('propCalOverlay').classList.add('show');
+  }
+  function renderPropCalView(){
+    const {propId, ym}=propCalState;
+    document.getElementById('propCalMonthLabel').textContent=finPeriodLabelFor(ym);
+    const occ=occupancyForMonth(propId, ym);
+    const occEl=document.getElementById('propCalOccupancy');
+    if(occ.hasStays){
+      occEl.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span class="occ-pill">📊 Occupation ${occ.pct}%</span><span style="font-size:0.8rem;color:var(--steel);">${occ.nights}/${occ.daysInMonth} nuits réservées</span></div><div class="occ-bar"><div style="width:${occ.pct}%;"></div></div>`;
+    } else {
+      occEl.innerHTML=`<span class="occ-pill" style="color:var(--steel);">📊 Occupation : — (pas d'arrivées/départs ce mois-ci)</span>`;
+    }
+    renderPropCalGrid();
+  }
+  function renderPropCalGrid(){
+    const {propId, ym}=propCalState;
+    const grid=document.getElementById('propCalGrid');
+    while(grid.children.length>7) grid.removeChild(grid.lastChild);
+    const [y,m]=ym.split('-').map(Number);
+    const first=new Date(y,m-1,1), offset=(first.getDay()+6)%7, dim=new Date(y,m,0).getDate(), dipm=new Date(y,m-1,0).getDate();
+    const today=todayStr();
+    const byDate={};
+    events.filter(e=>e.propertyId===propId&&e.date&&e.date.startsWith(ym)).forEach(e=>{ (byDate[e.date]=byDate[e.date]||[]).push(e); });
+    const occ=occupancyForMonth(propId, ym);
+    const cells=[];
+    for(let i=offset;i>0;i--) cells.push({day:dipm-i+1,muted:true,ds:null});
+    for(let d=1;d<=dim;d++) cells.push({day:d,muted:false,ds:ym+'-'+pad(d)});
+    let nx=1; while(cells.length%7!==0) cells.push({day:nx++,muted:true,ds:null});
+    cells.forEach(c=>{
+      const div=document.createElement('div'); div.className='pcal-day'+(c.muted?' muted':'');
+      if(!c.muted){
+        if(occ.booked.has(c.ds)) div.classList.add('booked');
+        if(c.ds===today) div.classList.add('today');
+      }
+      const num=document.createElement('div'); num.textContent=c.day; div.appendChild(num);
+      if(!c.muted && byDate[c.ds]){
+        const dots=document.createElement('div'); dots.className='pdots';
+        new Set(byDate[c.ds].map(e=>e.type)).forEach(t=>{ const dot=document.createElement('div'); dot.className='pdot '+(TYPE_DOT[t]||'dot-aut'); dots.appendChild(dot); });
+        div.appendChild(dots);
+      }
+      grid.appendChild(div);
+    });
+  }
+  document.getElementById('propCalPrev').addEventListener('click',()=>{ propCalState.ym=shiftMonth(propCalState.ym,-1); renderPropCalView(); });
+  document.getElementById('propCalNext').addEventListener('click',()=>{ propCalState.ym=shiftMonth(propCalState.ym,1); renderPropCalView(); });
+  document.getElementById('closePropCalBtn').addEventListener('click',()=>document.getElementById('propCalOverlay').classList.remove('show'));
+  document.getElementById('propCalOverlay').addEventListener('click',(e)=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove('show'); });
+  (function(){ const n=new Date(); const el=document.getElementById('propMonthPicker'); if(el) el.value=n.getFullYear()+'-'+pad(n.getMonth()+1); })();
+  document.getElementById('propMonthPicker').addEventListener('change', renderProperties);
+
   function renderProperties(){
     const container=document.getElementById('propertiesContainer'); if(!container) return;
     refreshPropOwnerFilter();
@@ -2191,6 +2324,10 @@
         <div style="font-size:0.82rem;color:var(--steel);margin-top:2px;">👤 ${escapeHtml(owner.name)}</div>`;
       const headRight=document.createElement('div'); headRight.style.cssText='display:flex;gap:8px;flex-shrink:0;align-items:center;';
 
+      const calBtn=document.createElement('button'); calBtn.className='btn btn-ghost on-light btn-sm'; calBtn.textContent='📅 Planning du mois';
+      calBtn.addEventListener('click',()=>openPropCalendar(prop.id, document.getElementById('propMonthPicker').value));
+      headRight.appendChild(calBtn);
+
       const editBtn=document.createElement('button'); editBtn.className='btn btn-ghost on-light btn-sm'; editBtn.textContent='✎ Modifier les détails';
       editBtn.addEventListener('click',()=>openPropDetail(owner.id, prop));
       headRight.appendChild(editBtn);
@@ -2199,6 +2336,22 @@
       headRight.appendChild(priceTag);
 
       head.appendChild(headLeft); head.appendChild(headRight); card.appendChild(head);
+
+      // Taux d'occupation du mois sélectionné
+      const ym=document.getElementById('propMonthPicker').value;
+      const occ=occupancyForMonth(prop.id, ym);
+      const occWrap=document.createElement('div'); occWrap.style.cssText='margin:-4px 0 16px;';
+      if(occ.hasStays){
+        occWrap.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;">
+            <span class="occ-pill">📊 Occupation ${occ.pct}%</span>
+            <span style="font-size:0.78rem;color:var(--steel);">${occ.nights}/${occ.daysInMonth} nuits · ${finPeriodLabelFor(ym)}</span>
+          </div>
+          <div class="occ-bar"><div style="width:${occ.pct}%;"></div></div>`;
+      } else {
+        const nbMenages=events.filter(e=>e.propertyId===prop.id&&e.type==='service'&&e.date&&e.date.startsWith(ym)).length;
+        occWrap.innerHTML=`<span class="occ-pill" style="color:var(--steel);">📊 Occupation : —</span> <span style="font-size:0.78rem;color:var(--steel);">${nbMenages} ménage(s) en ${finPeriodLabelFor(ym)} · (pas d'arrivées/départs pour calculer l'occupation)</span>`;
+      }
+      card.appendChild(occWrap);
 
       // Details grid
       const grid=document.createElement('div'); grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;';
@@ -3147,7 +3300,7 @@
   }, 2000);
 
   // ---------- Vérification des mises à jour ----------
-  const APP_VERSION = 10; // bumpé à chaque déploiement
+  const APP_VERSION = 11; // bumpé à chaque déploiement
   function showUpdateBanner(){
     if(document.getElementById('updateBanner')) return;
     const b=document.createElement('div');
