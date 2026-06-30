@@ -900,7 +900,7 @@
   <div class="modal">
     <h2>Nouveau logement détecté</h2>
     <p style="font-size:0.88rem;color:var(--steel);line-height:1.5;margin:-6px 0 18px;">
-      L'adresse <strong id="assignAddress" style="color:var(--ink);"></strong> a été détectée dans
+      Logement <strong id="assignAddress" style="color:var(--ink);"></strong> détecté dans
       <span id="assignCount"></span> événement(s). À quel propriétaire appartient ce logement ?
     </p>
     <form id="assignForm">
@@ -911,6 +911,10 @@
       <div class="form-row" id="assignNewOwnerRow">
         <label for="assignNewOwnerName">Nom du nouveau propriétaire</label>
         <input type="text" id="assignNewOwnerName" placeholder="Ex : M. et Mme Dupont">
+      </div>
+      <div class="form-row">
+        <label for="assignPropertyName">Nom du logement</label>
+        <input type="text" id="assignPropertyName" placeholder="Ex : Studio Lac, Appart Centre…">
       </div>
       <div class="form-row">
         <label for="assignPropertyAddress">Adresse du logement</label>
@@ -1024,6 +1028,8 @@
   function deleteProperty(ownerId,propId){ const o=owners.find(o=>o.id===ownerId); if(!o) return; o.properties=o.properties.filter(p=>p.id!==propId); saveOwners(); }
   function findPropertyById(propId){ for(const o of owners){ const p=o.properties.find(p=>p.id===propId); if(p) return {owner:o,property:p}; } return null; }
   function findPropertyByAddress(addr){ const t=normalizeAddr(addr); for(const o of owners){ const p=o.properties.find(p=>normalizeAddr(p.address)===t); if(p) return {owner:o,property:p}; } return null; }
+  function findPropertyByName(name){ const t=normalizeAddr(name); for(const o of owners){ const p=o.properties.find(p=>normalizeAddr(p.name)===t); if(p) return {owner:o,property:p}; } return null; }
+  function findPropertyByNameOrAddress(name,addr){ return (name?findPropertyByName(name):null)||findPropertyByAddress(addr); }
   function getOwnerIdForEvent(ev){ if(!ev.propertyId) return null; const f=findPropertyById(ev.propertyId); return f?f.owner.id:null; }
 
   function getEventPrice(ev){
@@ -1386,9 +1392,15 @@
     const candidates=events.filter(ev=>!ev.propertyId).map(ev=>({ev,addr:ev.detectedAddress||extractAddr(ev.title)})).filter(x=>x.addr);
     if(candidates.length===0){ showImportStatus('Aucun nouveau logement détecté.',false); return; }
     const groups=new Map();
-    candidates.forEach(({ev,addr})=>{ const k=normalizeAddr(addr); if(!groups.has(k)) groups.set(k,{address:addr,eventIds:[]}); groups.get(k).eventIds.push(ev.id); if(!ev.detectedAddress) ev.detectedAddress=addr; });
+    candidates.forEach(({ev,addr})=>{
+      const nameKey=ev.detectedName?normalizeAddr(ev.detectedName):'';
+      const k=normalizeAddr(addr)+'|'+nameKey;
+      if(!groups.has(k)) groups.set(k,{address:addr,name:ev.detectedName||null,eventIds:[]});
+      groups.get(k).eventIds.push(ev.id);
+      if(!ev.detectedAddress) ev.detectedAddress=addr;
+    });
     let queued=0,linked=0;
-    groups.forEach(g=>{ const ex=findPropertyByAddress(g.address); if(ex){ g.eventIds.forEach(id=>updateEvent(id,{propertyId:ex.property.id})); linked+=g.eventIds.length; }else{ assignmentQueue.push(g); queued++; } });
+    groups.forEach(g=>{ const ex=findPropertyByNameOrAddress(g.name,g.address); if(ex){ g.eventIds.forEach(id=>updateEvent(id,{propertyId:ex.property.id})); linked+=g.eventIds.length; }else{ assignmentQueue.push(g); queued++; } });
     saveEvents(); renderAll();
     if(queued===0) showImportStatus(linked+' événement(s) lié(s).',true);
     else{ showImportStatus(queued+' logement(s) à associer.',true); processNextAssignment(); }
@@ -1422,21 +1434,32 @@
 
   function queueAddressAssignments(imported){
     const groups=new Map();
-    imported.forEach(ev=>{ if(!ev.detectedAddress) return; const k=normalizeAddr(ev.detectedAddress); if(!groups.has(k)) groups.set(k,{address:ev.detectedAddress,eventIds:[]}); groups.get(k).eventIds.push(ev.id); });
-    groups.forEach(g=>{ const ex=findPropertyByAddress(g.address); if(ex){ g.eventIds.forEach(id=>updateEvent(id,{propertyId:ex.property.id})); }else assignmentQueue.push(g); });
+    imported.forEach(ev=>{
+      if(!ev.detectedAddress) return;
+      const nameKey=ev.detectedName?normalizeAddr(ev.detectedName):'';
+      const k=normalizeAddr(ev.detectedAddress)+'|'+nameKey;
+      if(!groups.has(k)) groups.set(k,{address:ev.detectedAddress,name:ev.detectedName||null,eventIds:[]});
+      groups.get(k).eventIds.push(ev.id);
+    });
+    groups.forEach(g=>{
+      const ex=findPropertyByNameOrAddress(g.name,g.address);
+      if(ex){ g.eventIds.forEach(id=>updateEvent(id,{propertyId:ex.property.id})); }
+      else assignmentQueue.push(g);
+    });
     saveEvents(); renderAll(); processNextAssignment();
   }
 
   // ---------- Assignment modal ----------
   const assignOverlay=document.getElementById('assignModalOverlay');
   function openAssignModal(g){
-    document.getElementById('assignAddress').textContent=g.address;
+    document.getElementById('assignAddress').textContent=g.name||g.address;
     document.getElementById('assignCount').textContent=g.eventIds.length;
     const sel=document.getElementById('assignOwnerSelect');
     sel.innerHTML='<option value="__new__">＋ Créer un nouveau propriétaire…</option>';
     owners.forEach(o=>{ const opt=document.createElement('option'); opt.value=o.id; opt.textContent=o.name; sel.appendChild(opt); });
     if(owners.length>0) sel.value=owners[0].id;
     toggleNewOwnerField();
+    document.getElementById('assignPropertyName').value=g.name||'';
     document.getElementById('assignPropertyAddress').value=g.address;
     document.getElementById('assignCleaningPrice').value='';
     document.getElementById('assignNewOwnerName').value='';
@@ -1451,10 +1474,11 @@
     e.preventDefault();
     const g=assignmentQueue[0]; if(!g) return;
     let ownerId=document.getElementById('assignOwnerSelect').value;
+    const propName=document.getElementById('assignPropertyName').value.trim();
     const address=document.getElementById('assignPropertyAddress').value.trim();
     const price=parseFloat(document.getElementById('assignCleaningPrice').value)||0;
     if(ownerId==='__new__'){ const name=document.getElementById('assignNewOwnerName').value.trim(); if(!name){alert('Indiquez un nom de propriétaire.');return;} ownerId=addOwner({name,contact:''}).id; }
-    const prop=addProperty(ownerId,{address,cleaningPrice:price});
+    const prop=addProperty(ownerId,{name:propName,address,cleaningPrice:price});
     if(prop) g.eventIds.forEach(id=>updateEvent(id,{propertyId:prop.id}));
     assignmentQueue.shift(); renderAll(); processNextAssignment();
   });
@@ -1523,7 +1547,8 @@
     const {date,time}=parseICSDate(cur.dtstart); if(!date) return null;
     const title=cur.summary||'Événement importé', details=cur.description||'';
     const detectedAddress=cur.location||extractAddr(title);
-    return {id:uid(),title,date,time,type:guessType(title+' '+details),location:cur.location||'',details,source:'iCal : '+filename,detectedAddress:detectedAddress||null};
+    const detectedName=extractPropertyName(title)||null;
+    return {id:uid(),title,date,time,type:guessType(title+' '+details),location:cur.location||'',details,source:'iCal : '+filename,detectedAddress:detectedAddress||null,detectedName};
   }
   function parseICSDate(v){ const m=v.match(/^(\d{4})(\d{2})(\d{2})(T(\d{2})(\d{2})(\d{2})?Z?)?$/); if(!m) return {date:null,time:''}; return {date:m[1]+"-"+m[2]+"-"+m[3],time:m[5]?m[5]+":"+m[6]:''}; }
 
@@ -1536,6 +1561,17 @@
     if((m=t.match(/^M[ée]nage en Profondeur pour\s+(.+)$/i))) return m[1].trim();
     if((m=t.match(/^D[ée]poussi[ée]rage\s*-\s*(.+)$/i))) return m[1].trim();
     if((m=t.match(/^.+?\s-\s(.+)$/))) return m[1].trim();
+    return null;
+  }
+
+  function extractPropertyName(title){
+    if(!title) return null;
+    let t=title.replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]+\s*/u,'').trim();
+    let m;
+    if((m=t.match(/^Cleaning\s+M[\d:]+\s*-\s*(.+)$/i))) return m[1].trim();
+    if((m=t.match(/^C[IO]\s+(.+?)\s*-\s*.+$/i))) return m[1].trim();
+    if((m=t.match(/^M[ée]nage en Profondeur pour\s+(.+)$/i))) return m[1].trim();
+    if((m=t.match(/^D[ée]poussi[ée]rage\s*-\s*(.+)$/i))) return m[1].trim();
     return null;
   }
 
