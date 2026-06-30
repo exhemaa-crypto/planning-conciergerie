@@ -932,56 +932,61 @@
   </div>
 </div>
 
-<!-- Firebase SDK compat -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
 (function(){
-  const firebaseConfig = {
-    apiKey: "AIzaSyB_KhqzC9kSJMUKMmzYhSTuQMYRECCEiqE",
-    authDomain: "planning-conciergerie-52d46.firebaseapp.com",
-    projectId: "planning-conciergerie-52d46",
-    storageBucket: "planning-conciergerie-52d46.firebasestorage.app",
-    messagingSenderId: "697270055741",
-    appId: "1:697270055741:web:1c84a71ca0ad5f46670b54"
-  };
+  const PROJECT = 'planning-conciergerie-52d46';
+  const API_KEY = 'AIzaSyB_KhqzC9kSJMUKMmzYhSTuQMYRECCEiqE';
+  const BASE = 'https://firestore.googleapis.com/v1/projects/'+PROJECT+'/databases/(default)/documents/planning/main';
+  const URL_KEY = BASE + '?key=' + API_KEY;
 
-  try {
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const DATA_DOC = db.collection('planning').doc('main');
-    let isSyncing = false;
+  function toFirestore(obj) {
+    return { fields: { payload: { stringValue: JSON.stringify(obj) } } };
+  }
+  function fromFirestore(doc) {
+    try { return JSON.parse(doc.fields.payload.stringValue); } catch(e) { return null; }
+  }
 
-    async function pushToFirebase(events, owners, prestataires) {
-      if(isSyncing) return;
-      try {
-        await DATA_DOC.set({
-          events: JSON.parse(JSON.stringify(events)),
-          owners: JSON.parse(JSON.stringify(owners)),
-          prestataires: JSON.parse(JSON.stringify(prestataires)),
-          updatedAt: Date.now()
-        });
-      } catch(e) { console.warn('Firebase sync error:', e); }
-    }
+  let isSyncing = false;
+  let lastRemoteTs = 0;
 
-    function startFirebaseSync(applyState) {
-      DATA_DOC.onSnapshot((snap) => {
-        if(!snap.exists) return;
-        const data = snap.data();
-        if(!data || !data.updatedAt) return;
-        const localTs = parseInt(localStorage.getItem('planning_v2_sync_ts')||'0');
-        if(data.updatedAt > localTs) {
-          isSyncing = true;
-          applyState(data.events||[], data.owners||[], data.prestataires||[]);
-          localStorage.setItem('planning_v2_sync_ts', data.updatedAt);
-          isSyncing = false;
-        }
+  async function pushToFirebase(events, owners, prestataires) {
+    if(isSyncing) return;
+    try {
+      const payload = { events, owners, prestataires, updatedAt: Date.now() };
+      await fetch(URL_KEY, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(toFirestore(payload))
       });
-    }
+    } catch(e) {}
+  }
 
-    window.__firebase = { pushToFirebase, startFirebaseSync };
-    console.log('Firebase chargé ✓');
-  } catch(e) { console.warn('Firebase init error:', e); }
+  function startFirebaseSync(applyState) {
+    async function poll() {
+      try {
+        const res = await fetch(URL_KEY);
+        if(!res.ok) return;
+        const doc = await res.json();
+        const data = fromFirestore(doc);
+        if(!data || !data.updatedAt) return;
+        if(data.updatedAt > lastRemoteTs) {
+          lastRemoteTs = data.updatedAt;
+          const localTs = parseInt(localStorage.getItem('planning_v2_sync_ts')||'0');
+          if(data.updatedAt > localTs) {
+            isSyncing = true;
+            applyState(data.events||[], data.owners||[], data.prestataires||[]);
+            localStorage.setItem('planning_v2_sync_ts', data.updatedAt);
+            isSyncing = false;
+          }
+        }
+      } catch(e) {}
+    }
+    poll();
+    setInterval(poll, 8000);
+  }
+
+  window.__firebase = { pushToFirebase, startFirebaseSync };
+  console.log('Sync cloud prêt ✓');
 })();
 </script>
 
