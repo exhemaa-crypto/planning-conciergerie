@@ -488,6 +488,7 @@
       <p>Ajoutez vos événements manuellement, ou importez un planning depuis un fichier CSV ou iCal (.ics).</p>
       <div class="hero-actions">
         <button class="btn btn-primary" id="newEventHeroBtn">＋ Nouvel événement</button>
+        <button class="btn btn-ghost" id="syncCalBtn">🔄 Synchroniser les calendriers</button>
         <button class="btn btn-ghost" id="importHeroBtn">📥 Importer un fichier</button>
         <button class="btn btn-ghost" id="exportBtn">⇩ Exporter (.ics)</button>
       </div>
@@ -679,6 +680,13 @@
           <label for="pdFloor">Étage / situation</label>
           <input type="text" id="pdFloor" placeholder="Ex : 2e étage, rez-de-jardin">
         </div>
+      </div>
+
+      <div style="font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--steel);margin:16px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line);">🔄 Synchronisation calendrier</div>
+      <div class="form-row">
+        <label for="pdIcalUrl">URL iCal (Airbnb / Booking)</label>
+        <input type="url" id="pdIcalUrl" placeholder="https://www.airbnb.fr/calendar/ical/...">
+        <div style="font-size:0.74rem;color:var(--steel);margin-top:4px;">Copiez le lien « Exporter le calendrier » depuis Airbnb/Booking. Les arrivées et départs seront importés automatiquement.</div>
       </div>
 
       <div style="font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--steel);margin:16px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line);">Accès</div>
@@ -1773,6 +1781,7 @@
   document.getElementById('importTopBtn').addEventListener('click',()=>importInput.click());
   document.getElementById('importHeroBtn').addEventListener('click',()=>importInput.click());
   document.getElementById('importPanelBtn').addEventListener('click',()=>importInput.click());
+  document.getElementById('syncCalBtn').addEventListener('click',()=>syncAllCalendars(false));
 
   importInput.addEventListener('change',(e)=>{
     const file=e.target.files[0]; if(!file) return;
@@ -1913,6 +1922,77 @@
     return {id:uid(),title,date,time,type:guessType(title+' '+details),location:cur.location||'',details,source:'iCal : '+filename,detectedAddress:detectedAddress||null,detectedName};
   }
   function parseICSDate(v){ const m=v.match(/^(\d{4})(\d{2})(\d{2})(T(\d{2})(\d{2})(\d{2})?Z?)?$/); if(!m) return {date:null,time:''}; return {date:m[1]+"-"+m[2]+"-"+m[3],time:m[5]?m[5]+":"+m[6]:''}; }
+
+  // ---------- Synchronisation iCal (Airbnb/Booking) ----------
+  function showToast(msg){
+    let el=document.getElementById('appToast');
+    if(!el){ el=document.createElement('div'); el.id='appToast'; el.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--cream);padding:10px 18px;border-radius:20px;font-size:0.85rem;z-index:1500;box-shadow:0 8px 24px rgba(0,0,0,0.3);max-width:90vw;text-align:center;transition:opacity .3s;'; document.body.appendChild(el); }
+    el.textContent=msg; el.style.opacity='1';
+    clearTimeout(el._t); el._t=setTimeout(()=>{ el.style.opacity='0'; },4500);
+  }
+  function parseIcalBookings(text){
+    const lines=unfoldICS(text); const out=[]; let cur=null;
+    lines.forEach(line=>{
+      if(line.startsWith('BEGIN:VEVENT')) cur={};
+      else if(line.startsWith('END:VEVENT')){ if(cur&&cur.dtstart) out.push(cur); cur=null; }
+      else if(cur){
+        const idx=line.indexOf(':'); if(idx===-1) return;
+        const key=line.slice(0,idx).split(';')[0].toUpperCase();
+        const val=line.slice(idx+1);
+        if(key==='UID') cur.uid=val;
+        else if(key==='DTSTART') cur.dtstart=val;
+        else if(key==='DTEND') cur.dtend=val;
+        else if(key==='SUMMARY') cur.summary=decodeICS(val);
+        else if(key==='DESCRIPTION') cur.description=decodeICS(val);
+      }
+    });
+    return out;
+  }
+  const CORS_PROXIES=[
+    u=>'https://corsproxy.io/?url='+encodeURIComponent(u),
+    u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u)
+  ];
+  async function fetchIcalText(url){
+    for(const mk of CORS_PROXIES){
+      try{ const res=await fetch(mk(url)); if(res.ok){ const t=await res.text(); if(t&&t.includes('BEGIN:VCALENDAR')) return t; } }catch(e){}
+    }
+    try{ const res=await fetch(url); if(res.ok){ const t=await res.text(); if(t.includes('BEGIN:VCALENDAR')) return t; } }catch(e){}
+    return null;
+  }
+  function isBlockedBooking(s){ return /not available|unavailable|blocked|closed|indisponible|ferm/i.test(s||''); }
+
+  async function syncAllCalendars(silent){
+    const propsWithUrl=[];
+    owners.forEach(o=>o.properties.forEach(p=>{ if(p.details&&p.details.icalUrl) propsWithUrl.push(p); }));
+    if(propsWithUrl.length===0){ if(!silent) showToast("Aucune URL iCal. Ajoutez-la dans Propriétés → Modifier les détails."); return; }
+    showToast('🔄 Synchronisation de '+propsWithUrl.length+' calendrier(s)…');
+    const existing=new Set(events.filter(e=>e.icalUid).map(e=>e.icalUid));
+    let added=0, errors=0;
+    for(const prop of propsWithUrl){
+      const txt=await fetchIcalText(prop.details.icalUrl);
+      if(!txt){ errors++; continue; }
+      const bookings=parseIcalBookings(txt);
+      const pname=prop.name||prop.address;
+      bookings.forEach(b=>{
+        if(isBlockedBooking(b.summary)) return;
+        const baseUid=b.uid||(b.dtstart+'|'+prop.id);
+        const inDate=parseICSDate(b.dtstart).date;
+        const outDate=b.dtend?parseICSDate(b.dtend).date:null;
+        const guest=(b.summary&&!/^reserved$/i.test(b.summary.trim()))?b.summary.trim():'';
+        if(inDate){
+          const uin=baseUid+'-in';
+          if(!existing.has(uin)){ existing.add(uin); events.push({id:uid(),title:'Arrivée — '+pname,date:inDate,time:'',type:'arrivee',propertyId:prop.id,location:prop.address,icalUid:uin,source:'iCal '+pname,guestName:guest}); added++; }
+        }
+        if(outDate){
+          const uout=baseUid+'-out';
+          if(!existing.has(uout)){ existing.add(uout); events.push({id:uid(),title:'Départ — '+pname,date:outDate,time:'',type:'depart',propertyId:prop.id,location:prop.address,icalUid:uout,source:'iCal '+pname}); added++; }
+        }
+      });
+    }
+    if(added>0){ saveEvents(); renderAll(); }
+    const msg=added>0 ? ('✓ '+added+' réservation'+(added>1?'s':'')+' importée'+(added>1?'s':'')+(errors?' · '+errors+' calendrier(s) inaccessible(s)':'')) : (errors? ('⚠ '+errors+' calendrier(s) inaccessible(s)') : '✓ À jour, aucune nouvelle réservation.');
+    showToast(msg);
+  }
 
   function extractAddr(title){
     if(!title) return null;
@@ -2212,6 +2292,7 @@
     document.getElementById('pdCheckinInstructions').value=d.checkinInstructions||'';
     document.getElementById('pdCheckoutInstructions').value=d.checkoutInstructions||'';
     document.getElementById('pdNotes').value=d.notes||'';
+    document.getElementById('pdIcalUrl').value=d.icalUrl||'';
     currentPhotos=[...(d.photos||[])];
     currentChecklist=[...(d.checklist||[])];
     renderPhotoPreview();
@@ -2307,6 +2388,7 @@
         checkinInstructions:document.getElementById('pdCheckinInstructions').value.trim(),
         checkoutInstructions:document.getElementById('pdCheckoutInstructions').value.trim(),
         notes:document.getElementById('pdNotes').value.trim(),
+        icalUrl:document.getElementById('pdIcalUrl').value.trim(),
         photos:[...currentPhotos],
         checklist:currentChecklist.map(s=>s.trim()).filter(Boolean)
       }
@@ -3065,7 +3147,7 @@
   }, 2000);
 
   // ---------- Vérification des mises à jour ----------
-  const APP_VERSION = 9; // bumpé à chaque déploiement
+  const APP_VERSION = 10; // bumpé à chaque déploiement
   function showUpdateBanner(){
     if(document.getElementById('updateBanner')) return;
     const b=document.createElement('div');
@@ -3131,6 +3213,15 @@
     document.body.appendChild(bar);
   }
   setTimeout(showDailySummary, 1200);
+
+  // ---------- Sync iCal automatique à l'ouverture (max 1×/2h) ----------
+  setTimeout(()=>{
+    const last=parseInt(localStorage.getItem('planning_v2_ical_last')||'0');
+    if(Date.now()-last > 2*3600*1000){
+      localStorage.setItem('planning_v2_ical_last', String(Date.now()));
+      syncAllCalendars(true);
+    }
+  }, 3500);
 
   // ---------- PWA : icône + manifest + service worker ----------
   (function(){

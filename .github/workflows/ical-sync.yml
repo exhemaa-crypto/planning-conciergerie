@@ -1,0 +1,19 @@
+name: Synchronisation iCal automatique
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'   # toutes les 3 heures
+  workflow_dispatch:          # bouton « Run workflow » manuel
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+      - name: Configurer Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Lancer la synchronisation iCal
+        run: node ical-sync.js
