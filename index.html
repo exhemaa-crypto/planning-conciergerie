@@ -2463,7 +2463,8 @@
         },
         ()=> events.length > 0 || owners.length > 0
       );
-      syncToCloud();
+      // Ne pousse vers cloud que si on a des données locales
+      if(events.length > 0 || owners.length > 0) syncToCloud();
     }
   }, 2000);
 
