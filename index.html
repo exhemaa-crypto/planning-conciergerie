@@ -932,11 +932,11 @@
   </div>
 </div>
 
-<!-- Firebase SDK -->
-<script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getFirestore, doc, setDoc, onSnapshot, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
+<!-- Firebase SDK compat -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+(function(){
   const firebaseConfig = {
     apiKey: "AIzaSyB_KhqzC9kSJMUKMmzYhSTuQMYRECCEiqE",
     authDomain: "planning-conciergerie-52d46.firebaseapp.com",
@@ -946,41 +946,43 @@
     appId: "1:697270055741:web:1c84a71ca0ad5f46670b54"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const DATA_DOC = doc(db, 'planning', 'main');
+  try {
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const DATA_DOC = db.collection('planning').doc('main');
+    let isSyncing = false;
 
-  let isSyncing = false;
+    async function pushToFirebase(events, owners, prestataires) {
+      if(isSyncing) return;
+      try {
+        await DATA_DOC.set({
+          events: JSON.parse(JSON.stringify(events)),
+          owners: JSON.parse(JSON.stringify(owners)),
+          prestataires: JSON.parse(JSON.stringify(prestataires)),
+          updatedAt: Date.now()
+        });
+      } catch(e) { console.warn('Firebase sync error:', e); }
+    }
 
-  async function pushToFirebase(events, owners, prestataires) {
-    if(isSyncing) return;
-    try {
-      await setDoc(DATA_DOC, {
-        events: JSON.parse(JSON.stringify(events)),
-        owners: JSON.parse(JSON.stringify(owners)),
-        prestataires: JSON.parse(JSON.stringify(prestataires)),
-        updatedAt: Date.now(),
-        updatedBy: navigator.userAgent.includes('iPhone')||navigator.userAgent.includes('iPad') ? 'mobile' : 'desktop'
+    function startFirebaseSync(applyState) {
+      DATA_DOC.onSnapshot((snap) => {
+        if(!snap.exists) return;
+        const data = snap.data();
+        if(!data || !data.updatedAt) return;
+        const localTs = parseInt(localStorage.getItem('planning_v2_sync_ts')||'0');
+        if(data.updatedAt > localTs) {
+          isSyncing = true;
+          applyState(data.events||[], data.owners||[], data.prestataires||[]);
+          localStorage.setItem('planning_v2_sync_ts', data.updatedAt);
+          isSyncing = false;
+        }
       });
-    } catch(e) { console.warn('Firebase sync error:', e); }
-  }
+    }
 
-  function startFirebaseSync(getState, applyState) {
-    onSnapshot(DATA_DOC, (snap) => {
-      if(!snap.exists()) return;
-      const data = snap.data();
-      if(!data || !data.updatedAt) return;
-      const localTs = parseInt(localStorage.getItem('planning_v2_sync_ts')||'0');
-      if(data.updatedAt > localTs) {
-        isSyncing = true;
-        applyState(data.events||[], data.owners||[], data.prestataires||[]);
-        localStorage.setItem('planning_v2_sync_ts', data.updatedAt);
-        isSyncing = false;
-      }
-    });
-  }
-
-  window.__firebase = { pushToFirebase, startFirebaseSync };
+    window.__firebase = { pushToFirebase, startFirebaseSync };
+    console.log('Firebase chargé ✓');
+  } catch(e) { console.warn('Firebase init error:', e); }
+})();
 </script>
 
 <script>
@@ -2439,19 +2441,14 @@
   // ---------- Firebase sync ----------
   setTimeout(()=>{
     if(window.__firebase){
-      window.__firebase.startFirebaseSync(
-        ()=>({events, owners, prestataires}),
-        (ev, ow, pr)=>{
-          events=ev; owners=ow; prestataires=pr;
-          save(STORAGE_KEY, events); save(OWNERS_KEY, owners); save(PRESTA_KEY, prestataires);
-          renderAll();
-        }
-      );
-      // Push données locales au démarrage si plus récentes
-      const localTs = parseInt(localStorage.getItem('planning_v2_sync_ts')||'0');
-      if(Date.now() - localTs > 5000) syncToCloud();
+      window.__firebase.startFirebaseSync((ev, ow, pr)=>{
+        events=ev; owners=ow; prestataires=pr;
+        save(STORAGE_KEY, events); save(OWNERS_KEY, owners); save(PRESTA_KEY, prestataires);
+        renderAll();
+      });
+      syncToCloud();
     }
-  }, 1500);
+  }, 2000);
 
   // ---------- PWA : icône + manifest + service worker ----------
   (function(){
