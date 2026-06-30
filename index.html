@@ -961,29 +961,37 @@
     } catch(e) {}
   }
 
+  function showSyncStatus(msg) {
+    let el = document.getElementById('syncToast');
+    if(!el){ el=document.createElement('div'); el.id='syncToast'; el.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0E2233;color:#F6F3EC;padding:8px 16px;border-radius:20px;font-size:0.8rem;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;'; document.body.appendChild(el); }
+    el.textContent=msg; el.style.opacity='1';
+    clearTimeout(el._t); el._t=setTimeout(()=>el.style.opacity='0', 3000);
+  }
+
   function startFirebaseSync(applyState, hasLocalData) {
     async function poll() {
       try {
         const res = await fetch(URL_KEY);
-        if(!res.ok) return;
+        if(!res.ok){ showSyncStatus('Sync erreur '+res.status); return; }
         const doc = await res.json();
+        if(doc.error){ showSyncStatus('Sync erreur: '+doc.error.message); return; }
         const data = fromFirestore(doc);
-        if(!data || !data.updatedAt) return;
-        if(data.updatedAt > lastRemoteTs) {
+        if(!data || !data.updatedAt){ showSyncStatus('Pas de données cloud'); return; }
+        const localTs = parseInt(localStorage.getItem('planning_v2_sync_ts')||'0');
+        if(data.updatedAt > localTs || !hasLocalData()) {
           lastRemoteTs = data.updatedAt;
-          const localTs = parseInt(localStorage.getItem('planning_v2_sync_ts')||'0');
-          // Sync si données cloud plus récentes OU si pas de données locales
-          if(data.updatedAt > localTs || !hasLocalData()) {
-            isSyncing = true;
-            applyState(data.events||[], data.owners||[], data.prestataires||[]);
-            localStorage.setItem('planning_v2_sync_ts', String(data.updatedAt));
-            isSyncing = false;
-          }
+          isSyncing = true;
+          applyState(data.events||[], data.owners||[], data.prestataires||[]);
+          localStorage.setItem('planning_v2_sync_ts', String(data.updatedAt));
+          isSyncing = false;
+          showSyncStatus('✓ Synchronisé — '+(data.events||[]).length+' événements');
+        } else {
+          showSyncStatus('✓ À jour');
         }
-      } catch(e) { console.warn('Sync error:', e); }
+      } catch(e) { showSyncStatus('Sync hors ligne'); }
     }
     poll();
-    setInterval(poll, 8000);
+    setInterval(poll, 10000);
   }
 
   window.__firebase = { pushToFirebase, startFirebaseSync };
