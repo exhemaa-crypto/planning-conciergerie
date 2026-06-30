@@ -961,7 +961,7 @@
     } catch(e) {}
   }
 
-  function startFirebaseSync(applyState) {
+  function startFirebaseSync(applyState, hasLocalData) {
     async function poll() {
       try {
         const res = await fetch(URL_KEY);
@@ -972,14 +972,15 @@
         if(data.updatedAt > lastRemoteTs) {
           lastRemoteTs = data.updatedAt;
           const localTs = parseInt(localStorage.getItem('planning_v2_sync_ts')||'0');
-          if(data.updatedAt > localTs) {
+          // Sync si données cloud plus récentes OU si pas de données locales
+          if(data.updatedAt > localTs || !hasLocalData()) {
             isSyncing = true;
             applyState(data.events||[], data.owners||[], data.prestataires||[]);
-            localStorage.setItem('planning_v2_sync_ts', data.updatedAt);
+            localStorage.setItem('planning_v2_sync_ts', String(data.updatedAt));
             isSyncing = false;
           }
         }
-      } catch(e) {}
+      } catch(e) { console.warn('Sync error:', e); }
     }
     poll();
     setInterval(poll, 8000);
@@ -2446,11 +2447,14 @@
   // ---------- Firebase sync ----------
   setTimeout(()=>{
     if(window.__firebase){
-      window.__firebase.startFirebaseSync((ev, ow, pr)=>{
-        events=ev; owners=ow; prestataires=pr;
-        save(STORAGE_KEY, events); save(OWNERS_KEY, owners); save(PRESTA_KEY, prestataires);
-        renderAll();
-      });
+      window.__firebase.startFirebaseSync(
+        (ev, ow, pr)=>{
+          events=ev; owners=ow; prestataires=pr;
+          save(STORAGE_KEY, events); save(OWNERS_KEY, owners); save(PRESTA_KEY, prestataires);
+          renderAll();
+        },
+        ()=> events.length > 0 || owners.length > 0
+      );
       syncToCloud();
     }
   }, 2000);
