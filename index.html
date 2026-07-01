@@ -1041,6 +1041,26 @@
         </div>
       </div>
 
+      <!-- Séjour lié au ménage (pour la barre de réservation du calendrier) -->
+      <div class="cico-box" id="stayBox">
+        <label style="display:block;font-size:0.78rem;letter-spacing:0.05em;text-transform:uppercase;color:var(--steel);margin-bottom:10px;">🛎️ Séjour du voyageur (pour la barre de réservation)</label>
+        <div class="form-row" style="margin-bottom:10px;">
+          <label for="eventStayGuest">Nom du voyageur</label>
+          <input type="text" id="eventStayGuest" placeholder="Ex : Amy">
+        </div>
+        <div class="form-grid">
+          <div class="form-row" style="margin-bottom:0;">
+            <label for="eventStayStart">Jour d'arrivée</label>
+            <input type="date" id="eventStayStart">
+          </div>
+          <div class="form-row" style="margin-bottom:0;">
+            <label for="eventStayEnd">Jour de départ</label>
+            <input type="date" id="eventStayEnd">
+          </div>
+        </div>
+        <div style="font-size:0.74rem;color:var(--steel);margin-top:8px;">Renseignez ces 2 dates pour afficher la réservation en barre sur le calendrier du logement et calculer le taux d'occupation.</div>
+      </div>
+
       <!-- CI/CO sur un ménage -->
       <div class="cico-box" id="cicoBox">
         <label style="display:block;font-size:0.78rem;letter-spacing:0.05em;text-transform:uppercase;color:var(--steel);margin-bottom:10px;">Ce ménage est accompagné d'un :</label>
@@ -1557,6 +1577,10 @@
         metaHtml+=`<span>💶 ${lbl} : ${formatPrice(price)}${mark}</span>`;
       }
     }
+    // Séjour lié au ménage
+    if(ev.type==='service'&&ev.stayStart&&ev.stayEnd){
+      metaHtml+=`<span>🛎️ ${ev.guestName?escapeHtml(ev.guestName)+' · ':''}${formatDateFR(ev.stayStart)} → ${formatDateFR(ev.stayEnd)}</span>`;
+    }
     // CI/CO badges on cleaning
     if(ev.type==='service'){
       if(ev.hasCi){
@@ -1638,6 +1662,9 @@
     document.getElementById('eventCoPrice').value=(ev&&ev.coPrice!=null)?ev.coPrice:'';
     document.getElementById('eventCoDone').checked=!!(ev&&ev.coDone);
     document.getElementById('eventCoExport').checked=!!(ev&&ev.coExport);
+    document.getElementById('eventStayGuest').value=ev?(ev.guestName||''):'';
+    document.getElementById('eventStayStart').value=ev?(ev.stayStart||''):'';
+    document.getElementById('eventStayEnd').value=ev?(ev.stayEnd||''):'';
     document.getElementById('eventGuestName').value=ev?(ev.guestName||''):'';
     document.getElementById('eventGuestCount').value=ev?(ev.guestCount||''):'';
     document.getElementById('eventGuestPhone').value=ev?(ev.guestPhone||''):'';
@@ -1654,6 +1681,7 @@
   function updateCicoVisibility(){
     const type=document.getElementById('eventType').value;
     document.getElementById('cicoBox').classList.toggle('visible', type==='service');
+    document.getElementById('stayBox').classList.toggle('visible', type==='service');
     document.getElementById('prestaFieldRow').style.display=(type==='service')?'block':'none';
     // Infos voyageur : pertinentes pour arrivée / départ
     document.getElementById('guestBox').classList.toggle('visible', type==='arrivee'||type==='depart');
@@ -1742,10 +1770,12 @@
       coPrice:type==='service'&&document.getElementById('eventHasCo').checked?(document.getElementById('eventCoPrice').value===''?null:parseFloat(document.getElementById('eventCoPrice').value)):null,
       coExport:type==='service'&&document.getElementById('eventHasCo').checked?document.getElementById('eventCoExport').checked:false,
       coDone:type==='service'&&document.getElementById('eventHasCo').checked?document.getElementById('eventCoDone').checked:false,
-      guestName:document.getElementById('eventGuestName').value.trim(),
+      guestName:type==='service'?document.getElementById('eventStayGuest').value.trim():document.getElementById('eventGuestName').value.trim(),
       guestCount:document.getElementById('eventGuestCount').value.trim(),
       guestPhone:document.getElementById('eventGuestPhone').value.trim(),
       arrivalTime:document.getElementById('eventArrivalTime').value,
+      stayStart:type==='service'?document.getElementById('eventStayStart').value:'',
+      stayEnd:type==='service'?document.getElementById('eventStayEnd').value:'',
       details:document.getElementById('eventDetails').value.trim()
     };
     // Statut par défaut pour une nouvelle mission de ménage (édition : statut préservé)
@@ -2237,8 +2267,7 @@
     const [y,m]=ym.split('-').map(Number);
     const daysInMonth=new Date(y,m,0).getDate();
     const monthStart=ym+'-01', monthLastNight=ym+'-'+pad(daysInMonth);
-    const stays=computeStays(propId);
-    const complete=stays.filter(s=>s.start&&s.end); // séjours avec arrivée ET départ connus
+    const complete=getPropertyStays(propId); // séjours complets (paires arrivée/départ + séjours des ménages)
     const booked=new Set();
     complete.forEach(s=>{
       let d=new Date(s.start+'T00:00:00'); const endD=new Date(s.end+'T00:00:00'); // nuits = de l'arrivée (incluse) au départ (exclu)
@@ -2282,6 +2311,15 @@
     return stays;
   }
 
+  // Tous les séjours COMPLETS d'un logement : paires arrivée/départ + séjours renseignés sur les ménages
+  function getPropertyStays(propId){
+    const stays=[];
+    events.filter(e=>e.propertyId===propId&&e.type==='service'&&e.stayStart&&e.stayEnd)
+      .forEach(e=>stays.push({start:e.stayStart, end:e.stayEnd, guest:(e.guestName||'').trim()||'Réservé'}));
+    computeStaysDetailed(propId).filter(s=>s.start&&s.end).forEach(s=>stays.push(s));
+    return stays;
+  }
+
   function renderPropCalGrid(){
     const {propId, ym}=propCalState;
     const weeksEl=document.getElementById('propCalWeeks'); if(!weeksEl) return;
@@ -2295,7 +2333,7 @@
     for(let i=0;i<totalCells;i++){ const d=new Date(startDate); d.setDate(startDate.getDate()+i); cells.push({date:dateOnly(d), day:d.getDate(), muted:(d.getMonth()!==m-1)}); }
     const svcByDate={};
     events.filter(e=>e.propertyId===propId&&e.type==='service'&&e.date).forEach(e=>{ svcByDate[e.date]=(svcByDate[e.date]||0)+1; });
-    const stays=computeStaysDetailed(propId).filter(s=>s.start&&s.end);
+    const stays=getPropertyStays(propId);
 
     for(let w=0; w<cells.length; w+=7){
       const week=cells.slice(w,w+7);
@@ -3357,7 +3395,7 @@
   }, 2000);
 
   // ---------- Vérification des mises à jour ----------
-  const APP_VERSION = 12; // bumpé à chaque déploiement
+  const APP_VERSION = 13; // bumpé à chaque déploiement
   function showUpdateBanner(){
     if(document.getElementById('updateBanner')) return;
     const b=document.createElement('div');
