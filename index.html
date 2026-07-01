@@ -1663,7 +1663,9 @@
     document.getElementById('eventCoDone').checked=!!(ev&&ev.coDone);
     document.getElementById('eventCoExport').checked=!!(ev&&ev.coExport);
     document.getElementById('eventStayGuest').value=ev?(ev.guestName||''):'';
-    document.getElementById('eventStayStart').value=ev?(ev.stayStart||''):'';
+    const ssEl=document.getElementById('eventStayStart');
+    ssEl.value=ev?(ev.stayStart||''):'';
+    ssEl.dataset.auto=(ev&&ev.stayStart)?'0':'1'; // nouveau ménage : le jour d'arrivée suit la date
     document.getElementById('eventStayEnd').value=ev?(ev.stayEnd||''):'';
     document.getElementById('eventGuestName').value=ev?(ev.guestName||''):'';
     document.getElementById('eventGuestCount').value=ev?(ev.guestCount||''):'';
@@ -1685,8 +1687,19 @@
     document.getElementById('prestaFieldRow').style.display=(type==='service')?'block':'none';
     // Infos voyageur : pertinentes pour arrivée / départ
     document.getElementById('guestBox').classList.toggle('visible', type==='arrivee'||type==='depart');
-    if(type==='service') populatePrestaSelect(document.getElementById('eventPresta').value);
+    if(type==='service'){
+      populatePrestaSelect(document.getElementById('eventPresta').value);
+      // Jour d'arrivée = date de l'événement par défaut
+      const ss=document.getElementById('eventStayStart');
+      if(ss && !ss.value) ss.value=document.getElementById('eventDate').value;
+    }
   }
+  // Le jour d'arrivée suit la date de l'événement tant qu'il n'a pas été modifié manuellement
+  document.getElementById('eventDate').addEventListener('change',()=>{
+    const ss=document.getElementById('eventStayStart');
+    if(ss && (!ss.value || ss.dataset.auto==='1')){ ss.value=document.getElementById('eventDate').value; ss.dataset.auto='1'; }
+  });
+  document.getElementById('eventStayStart').addEventListener('input',(e)=>{ e.target.dataset.auto='0'; });
 
   function populatePrestaSelect(selId){
     const sel=document.getElementById('eventPresta');
@@ -3395,7 +3408,7 @@
   }, 2000);
 
   // ---------- Vérification des mises à jour ----------
-  const APP_VERSION = 13; // bumpé à chaque déploiement
+  const APP_VERSION = 14; // bumpé à chaque déploiement
   function showUpdateBanner(){
     if(document.getElementById('updateBanner')) return;
     const b=document.createElement('div');
