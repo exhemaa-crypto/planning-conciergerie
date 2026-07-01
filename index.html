@@ -380,13 +380,21 @@
   .checklist-item input[type=text]{flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:0.9rem;font-family:inherit;background:var(--cream);color:var(--ink);}
   .checklist-item button{border:none;background:#F6E6E4;color:#A6432F;border-radius:8px;width:32px;height:32px;flex:none;cursor:pointer;}
 
-  /* ---------- Property month calendar ---------- */
-  #propCalGrid .pcal-day{aspect-ratio:1/1;border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:4px 2px;gap:2px;font-size:0.78rem;position:relative;}
-  #propCalGrid .pcal-day.muted{color:#C8C2B4;border-color:transparent;}
-  #propCalGrid .pcal-day.booked{background:var(--gold-soft);}
-  #propCalGrid .pcal-day.today{outline:2px solid var(--ink);outline-offset:-2px;font-weight:700;}
-  #propCalGrid .pcal-day .pdots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;}
-  #propCalGrid .pcal-day .pdot{width:6px;height:6px;border-radius:50%;}
+  /* ---------- Property month calendar (vue barres type Airbnb) ---------- */
+  .pcal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:0;margin-bottom:4px;}
+  .pcal-dow span{text-align:center;font-size:0.66rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--steel);}
+  .pcal-weeks{display:flex;flex-direction:column;gap:3px;}
+  .pcal-week{position:relative;}
+  .pcal-week-days{display:grid;grid-template-columns:repeat(7,1fr);gap:0;}
+  .pcal-cell+.pcal-cell{margin-left:-1px;}
+  .pcal-cell{min-height:62px;border:1px solid var(--line);border-radius:8px;padding:4px 6px;font-size:0.8rem;}
+  .pcal-cell.muted{color:#C8C2B4;background:var(--cream);border-color:transparent;}
+  .pcal-cell.today{outline:2px solid var(--ink);outline-offset:-2px;font-weight:700;}
+  .pcal-cell .svc{font-size:0.62rem;color:#3E6478;margin-top:2px;display:flex;align-items:center;gap:3px;}
+  .pcal-bars{position:absolute;left:0;right:0;top:22px;pointer-events:none;}
+  .pcal-bar{position:absolute;height:20px;border-radius:10px;background:var(--ink);color:var(--cream);font-size:0.66rem;font-weight:600;display:flex;align-items:center;padding:0 8px;white-space:nowrap;overflow:hidden;box-shadow:0 1px 3px rgba(14,34,51,0.25);}
+  .pcal-bar.cont-left{border-top-left-radius:0;border-bottom-left-radius:0;}
+  .pcal-bar.cont-right{border-top-right-radius:0;border-bottom-right-radius:0;}
   .occ-bar{height:10px;border-radius:999px;background:var(--mist);overflow:hidden;}
   .occ-bar>div{height:100%;background:linear-gradient(90deg,var(--steel),var(--gold));border-radius:999px;}
   .occ-pill{display:inline-flex;align-items:center;gap:6px;font-size:0.72rem;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--cream);border:1px solid var(--line);color:var(--ink);}
@@ -786,12 +794,10 @@
     </div>
     <div id="propCalMonthLabel" style="font-size:0.9rem;color:var(--steel);text-transform:capitalize;margin-bottom:14px;"></div>
     <div id="propCalOccupancy" style="margin-bottom:16px;"></div>
-    <div class="cal-grid" id="propCalGrid">
-      <div class="dow">L</div><div class="dow">M</div><div class="dow">M</div><div class="dow">J</div><div class="dow">V</div><div class="dow">S</div><div class="dow">D</div>
-    </div>
+    <div class="pcal-dow"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+    <div id="propCalWeeks" class="pcal-weeks"></div>
     <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:0.76rem;color:var(--steel);">
-      <span style="display:flex;align-items:center;gap:5px;"><span class="dot dot-arr" style="width:8px;height:8px;border-radius:50%;"></span> Arrivée</span>
-      <span style="display:flex;align-items:center;gap:5px;"><span class="dot dot-dep" style="width:8px;height:8px;border-radius:50%;"></span> Départ</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:18px;height:10px;border-radius:5px;background:var(--ink);display:inline-block;"></span> Réservation</span>
       <span style="display:flex;align-items:center;gap:5px;"><span class="dot dot-svc" style="width:8px;height:8px;border-radius:50%;"></span> Ménage</span>
     </div>
     <div class="modal-actions">
@@ -1051,7 +1057,10 @@
               <label style="font-size:0.74rem;color:var(--steel);text-transform:uppercase;letter-spacing:0.05em;display:block;margin:6px 0 4px;">Prix check-in (€)</label>
               <input type="number" id="eventCiPrice" min="0" step="0.01" placeholder="Ex : 18" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:0.88rem;font-family:inherit;color:var(--ink);background:var(--cream);">
               <label class="cico-label" style="margin-top:8px;font-size:0.8rem;">
-                <input type="checkbox" id="eventCiExport"> Inclure dans l'export
+                <input type="checkbox" id="eventCiDone"> ✓ Fait
+              </label>
+              <label class="cico-label" style="margin-top:4px;font-size:0.8rem;">
+                <input type="checkbox" id="eventCiExport"> 💶 Facturer
               </label>
             </div>
           </div>
@@ -1067,7 +1076,10 @@
               <label style="font-size:0.74rem;color:var(--steel);text-transform:uppercase;letter-spacing:0.05em;display:block;margin:6px 0 4px;">Prix check-out (€)</label>
               <input type="number" id="eventCoPrice" min="0" step="0.01" placeholder="Ex : 18" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:0.88rem;font-family:inherit;color:var(--ink);background:var(--cream);">
               <label class="cico-label" style="margin-top:8px;font-size:0.8rem;">
-                <input type="checkbox" id="eventCoExport"> Inclure dans l'export
+                <input type="checkbox" id="eventCoDone"> ✓ Fait
+              </label>
+              <label class="cico-label" style="margin-top:4px;font-size:0.8rem;">
+                <input type="checkbox" id="eventCoExport"> 💶 Facturer
               </label>
             </div>
           </div>
@@ -1551,13 +1563,15 @@
         const d=ev.ciDate?formatDateFR(ev.ciDate):'';
         const t=ev.ciTime?' '+ev.ciTime:'';
         const p=ev.ciPrice!=null?' · '+formatPrice(ev.ciPrice):'';
-        metaHtml+=`<span class="tag tag-ci">✓ Check-in${d?' — '+d+t:''}${p}</span>`;
+        const flags=(ev.ciDone?' ✓fait':'')+(ev.ciExport?' 💶facturé':'');
+        metaHtml+=`<span class="tag tag-ci">Check-in${d?' — '+d+t:''}${p}${flags}</span>`;
       }
       if(ev.hasCo){
         const d=ev.coDate?formatDateFR(ev.coDate):'';
         const t=ev.coTime?' '+ev.coTime:'';
         const p=ev.coPrice!=null?' · '+formatPrice(ev.coPrice):'';
-        metaHtml+=`<span class="tag tag-co">✓ Check-out${d?' — '+d+t:''}${p}</span>`;
+        const flags=(ev.coDone?' ✓fait':'')+(ev.coExport?' 💶facturé':'');
+        metaHtml+=`<span class="tag tag-co">Check-out${d?' — '+d+t:''}${p}${flags}</span>`;
       }
     }
     if(ev.prestaId){ const pr=findPrestaById(ev.prestaId); if(pr) metaHtml+=`<span>🔧 ${escapeHtml(pr.name)}</span>`; }
@@ -1615,12 +1629,14 @@
     document.getElementById('eventCiDate').value=ev?(ev.ciDate||ev.date||''):'';
     document.getElementById('eventCiTime').value=ev?(ev.ciTime||''):'';
     document.getElementById('eventCiPrice').value=(ev&&ev.ciPrice!=null)?ev.ciPrice:'';
+    document.getElementById('eventCiDone').checked=!!(ev&&ev.ciDone);
     document.getElementById('eventCiExport').checked=!!(ev&&ev.ciExport);
     document.getElementById('eventHasCo').checked=hasCo;
     document.getElementById('coDateWrap').style.display=hasCo?'block':'none';
     document.getElementById('eventCoDate').value=ev?(ev.coDate||ev.date||''):'';
     document.getElementById('eventCoTime').value=ev?(ev.coTime||''):'';
     document.getElementById('eventCoPrice').value=(ev&&ev.coPrice!=null)?ev.coPrice:'';
+    document.getElementById('eventCoDone').checked=!!(ev&&ev.coDone);
     document.getElementById('eventCoExport').checked=!!(ev&&ev.coExport);
     document.getElementById('eventGuestName').value=ev?(ev.guestName||''):'';
     document.getElementById('eventGuestCount').value=ev?(ev.guestCount||''):'';
@@ -1719,11 +1735,13 @@
       ciTime:type==='service'&&document.getElementById('eventHasCi').checked?document.getElementById('eventCiTime').value:'',
       ciPrice:type==='service'&&document.getElementById('eventHasCi').checked?(document.getElementById('eventCiPrice').value===''?null:parseFloat(document.getElementById('eventCiPrice').value)):null,
       ciExport:type==='service'&&document.getElementById('eventHasCi').checked?document.getElementById('eventCiExport').checked:false,
+      ciDone:type==='service'&&document.getElementById('eventHasCi').checked?document.getElementById('eventCiDone').checked:false,
       hasCo:type==='service'?document.getElementById('eventHasCo').checked:false,
       coDate:type==='service'&&document.getElementById('eventHasCo').checked?document.getElementById('eventCoDate').value:'',
       coTime:type==='service'&&document.getElementById('eventHasCo').checked?document.getElementById('eventCoTime').value:'',
       coPrice:type==='service'&&document.getElementById('eventHasCo').checked?(document.getElementById('eventCoPrice').value===''?null:parseFloat(document.getElementById('eventCoPrice').value)):null,
       coExport:type==='service'&&document.getElementById('eventHasCo').checked?document.getElementById('eventCoExport').checked:false,
+      coDone:type==='service'&&document.getElementById('eventHasCo').checked?document.getElementById('eventCoDone').checked:false,
       guestName:document.getElementById('eventGuestName').value.trim(),
       guestCount:document.getElementById('eventGuestCount').value.trim(),
       guestPhone:document.getElementById('eventGuestPhone').value.trim(),
@@ -2251,34 +2269,72 @@
     }
     renderPropCalGrid();
   }
+  // Séjours avec nom du voyageur (paire arrivée->départ)
+  function computeStaysDetailed(propId){
+    const list=events.filter(e=>e.propertyId===propId&&(e.type==='arrivee'||e.type==='depart')&&e.date)
+      .sort((a,b)=> a.date<b.date?-1 : a.date>b.date?1 : (a.type==='arrivee'?-1:1));
+    const open=[], stays=[];
+    list.forEach(e=>{
+      if(e.type==='arrivee') open.push(e);
+      else { if(open.length){ const a=open.shift(); stays.push({start:a.date, end:e.date, guest:(a.guestName||a.title||'').replace(/^Arrivée\s*—\s*/i,'').trim()}); } else stays.push({start:null,end:e.date,guest:''}); }
+    });
+    open.forEach(a=>stays.push({start:a.date, end:null, guest:(a.guestName||a.title||'').replace(/^Arrivée\s*—\s*/i,'').trim()}));
+    return stays;
+  }
+
   function renderPropCalGrid(){
     const {propId, ym}=propCalState;
-    const grid=document.getElementById('propCalGrid');
-    while(grid.children.length>7) grid.removeChild(grid.lastChild);
+    const weeksEl=document.getElementById('propCalWeeks'); if(!weeksEl) return;
+    weeksEl.innerHTML='';
     const [y,m]=ym.split('-').map(Number);
-    const first=new Date(y,m-1,1), offset=(first.getDay()+6)%7, dim=new Date(y,m,0).getDate(), dipm=new Date(y,m-1,0).getDate();
+    const first=new Date(y,m-1,1), offset=(first.getDay()+6)%7, dim=new Date(y,m,0).getDate();
     const today=todayStr();
-    const byDate={};
-    events.filter(e=>e.propertyId===propId&&e.date&&e.date.startsWith(ym)).forEach(e=>{ (byDate[e.date]=byDate[e.date]||[]).push(e); });
-    const occ=occupancyForMonth(propId, ym);
+    const startDate=new Date(y,m-1,1-offset);
+    const totalCells=Math.ceil((offset+dim)/7)*7;
     const cells=[];
-    for(let i=offset;i>0;i--) cells.push({day:dipm-i+1,muted:true,ds:null});
-    for(let d=1;d<=dim;d++) cells.push({day:d,muted:false,ds:ym+'-'+pad(d)});
-    let nx=1; while(cells.length%7!==0) cells.push({day:nx++,muted:true,ds:null});
-    cells.forEach(c=>{
-      const div=document.createElement('div'); div.className='pcal-day'+(c.muted?' muted':'');
-      if(!c.muted){
-        if(occ.booked.has(c.ds)) div.classList.add('booked');
-        if(c.ds===today) div.classList.add('today');
-      }
-      const num=document.createElement('div'); num.textContent=c.day; div.appendChild(num);
-      if(!c.muted && byDate[c.ds]){
-        const dots=document.createElement('div'); dots.className='pdots';
-        new Set(byDate[c.ds].map(e=>e.type)).forEach(t=>{ const dot=document.createElement('div'); dot.className='pdot '+(TYPE_DOT[t]||'dot-aut'); dots.appendChild(dot); });
-        div.appendChild(dots);
-      }
-      grid.appendChild(div);
-    });
+    for(let i=0;i<totalCells;i++){ const d=new Date(startDate); d.setDate(startDate.getDate()+i); cells.push({date:dateOnly(d), day:d.getDate(), muted:(d.getMonth()!==m-1)}); }
+    const svcByDate={};
+    events.filter(e=>e.propertyId===propId&&e.type==='service'&&e.date).forEach(e=>{ svcByDate[e.date]=(svcByDate[e.date]||0)+1; });
+    const stays=computeStaysDetailed(propId).filter(s=>s.start&&s.end);
+
+    for(let w=0; w<cells.length; w+=7){
+      const week=cells.slice(w,w+7);
+      const weekEl=document.createElement('div'); weekEl.className='pcal-week';
+      const daysEl=document.createElement('div'); daysEl.className='pcal-week-days';
+      week.forEach(c=>{
+        const cell=document.createElement('div'); cell.className='pcal-cell'+(c.muted?' muted':'')+(c.date===today?' today':'');
+        const num=document.createElement('div'); num.textContent=c.day; cell.appendChild(num);
+        if(!c.muted && svcByDate[c.date]){ const s=document.createElement('div'); s.className='svc'; s.innerHTML='<span class="dot dot-svc" style="width:6px;height:6px;border-radius:50%;display:inline-block;"></span> Ménage'+(svcByDate[c.date]>1?' ×'+svcByDate[c.date]:''); cell.appendChild(s); }
+        daysEl.appendChild(cell);
+      });
+      weekEl.appendChild(daysEl);
+
+      const weekStart=week[0].date, weekEnd=week[6].date;
+      const barsEl=document.createElement('div'); barsEl.className='pcal-bars';
+      const levelsEnd=[];
+      stays.filter(s=> s.start<=weekEnd && s.end>=weekStart).sort((a,b)=> a.start<b.start?-1:1).forEach(s=>{
+        const segStart=s.start>weekStart?s.start:weekStart;
+        const segEnd=s.end<weekEnd?s.end:weekEnd;
+        const startCol=week.findIndex(c=>c.date===segStart);
+        const endCol=week.findIndex(c=>c.date===segEnd);
+        if(startCol<0||endCol<0) return;
+        let lvl=0; while(levelsEnd[lvl]!=null && levelsEnd[lvl]>=startCol) lvl++;
+        levelsEnd[lvl]=endCol;
+        const bar=document.createElement('div'); bar.className='pcal-bar';
+        if(s.start<segStart) bar.classList.add('cont-left');
+        if(s.end>segEnd) bar.classList.add('cont-right');
+        bar.style.left='calc('+(startCol/7*100)+'% + 2px)';
+        bar.style.width='calc('+((endCol-startCol+1)/7*100)+'% - 4px)';
+        bar.style.top=(lvl*22)+'px';
+        bar.textContent=s.guest||'Réservé';
+        bar.title=(s.guest||'Réservé')+' · '+formatDateFR(s.start)+' → '+formatDateFR(s.end);
+        barsEl.appendChild(bar);
+      });
+      weekEl.appendChild(barsEl);
+      const nLvl=levelsEnd.length;
+      if(nLvl>0) daysEl.querySelectorAll('.pcal-cell').forEach(c=>{ c.style.minHeight=(28+nLvl*22+6)+'px'; });
+      weeksEl.appendChild(weekEl);
+    }
   }
   document.getElementById('propCalPrev').addEventListener('click',()=>{ propCalState.ym=shiftMonth(propCalState.ym,-1); renderPropCalView(); });
   document.getElementById('propCalNext').addEventListener('click',()=>{ propCalState.ym=shiftMonth(propCalState.ym,1); renderPropCalView(); });
@@ -3064,8 +3120,9 @@
     let r=0;
     if(['arrivee','depart','service'].includes(ev.type)) r+=getEventPrice(ev);
     if(ev.type==='service'){
-      if(ev.hasCi) r+=(ev.ciPrice!=null?Number(ev.ciPrice):DEFAULT_PRICE);
-      if(ev.hasCo) r+=(ev.coPrice!=null?Number(ev.coPrice):DEFAULT_PRICE);
+      // Les check-in/out ne sont facturés que si « Facturer » est coché
+      if(ev.hasCi&&ev.ciExport) r+=(ev.ciPrice!=null?Number(ev.ciPrice):DEFAULT_PRICE);
+      if(ev.hasCo&&ev.coExport) r+=(ev.coPrice!=null?Number(ev.coPrice):DEFAULT_PRICE);
     }
     return r;
   }
@@ -3095,8 +3152,8 @@
     evs.forEach(e=>{
       if(e.type==='service'){
         missions++; caClean+=getEventPrice(e);
-        if(e.hasCi) caCico+=(e.ciPrice!=null?Number(e.ciPrice):DEFAULT_PRICE);
-        if(e.hasCo) caCico+=(e.coPrice!=null?Number(e.coPrice):DEFAULT_PRICE);
+        if(e.hasCi&&e.ciExport) caCico+=(e.ciPrice!=null?Number(e.ciPrice):DEFAULT_PRICE);
+        if(e.hasCo&&e.coExport) caCico+=(e.coPrice!=null?Number(e.coPrice):DEFAULT_PRICE);
       } else if(e.type==='arrivee'||e.type==='depart'){ caCico+=getEventPrice(e); }
     });
     const caTotal=caClean+caCico;
@@ -3300,7 +3357,7 @@
   }, 2000);
 
   // ---------- Vérification des mises à jour ----------
-  const APP_VERSION = 11; // bumpé à chaque déploiement
+  const APP_VERSION = 12; // bumpé à chaque déploiement
   function showUpdateBanner(){
     if(document.getElementById('updateBanner')) return;
     const b=document.createElement('div');

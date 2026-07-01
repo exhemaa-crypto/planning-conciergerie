@@ -1,4 +1,4 @@
-const CACHE = 'planning-v2-cache-v11';
+const CACHE = 'planning-v2-cache-v12';
 const ASSETS = [
   '/planning-conciergerie/',
   '/planning-conciergerie/index.html'
