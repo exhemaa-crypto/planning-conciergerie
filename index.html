@@ -942,6 +942,17 @@
   </div>
 </div>
 
+<!-- ================= PROPERTY INFO MODAL (lecture seule) ================= -->
+<div class="modal-overlay" id="propInfoOverlay">
+  <div class="modal" style="max-width:560px;">
+    <h2 id="propInfoTitle">Détails du logement</h2>
+    <div id="propInfoContent" style="font-size:0.92rem;"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-primary btn-sm" id="closePropInfoBtn">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <!-- ================= EXPENSE MODAL ================= -->
 <div class="modal-overlay" id="expenseModalOverlay">
   <div class="modal" style="max-width:460px;">
@@ -2411,6 +2422,11 @@
     if(ev.details) meta+=`<span>📝 ${escapeHtml(ev.details)}</span>`;
     card.innerHTML=`<div class="cg-head"><div class="cg-title">${escapeHtml(ev.title||'Mission')}</div></div><div class="cg-meta">${meta}</div>`;
     const actions=document.createElement('div'); actions.className='cg-actions';
+    if(ev.propertyId && findPropertyById(ev.propertyId)){
+      const info=document.createElement('button'); info.className='btn btn-ghost on-light btn-sm'; info.textContent='🏠 Détails du logement';
+      info.addEventListener('click',()=>showPropInfo(ev.propertyId));
+      actions.appendChild(info);
+    }
     if(mode==='proposed'){
       const acc=document.createElement('button'); acc.className='btn btn-primary btn-sm'; acc.textContent='✓ Accepter';
       acc.addEventListener('click',()=>{ updateEvent(ev.id,{prestaResponse:'accepted'}); renderConcierge(); });
@@ -2433,6 +2449,43 @@
     card.appendChild(actions);
     return card;
   }
+  // Détails du logement (lecture seule, pour le concierge)
+  function showPropInfo(propId){
+    const f=findPropertyById(propId); if(!f) return;
+    const p=f.property, d=p.details||{};
+    document.getElementById('propInfoTitle').textContent='🏠 '+(p.name||p.address);
+    let h=`<div style="color:var(--steel);margin-bottom:14px;">📍 ${escapeHtml(p.address)} · 👤 ${escapeHtml(f.owner.name)}</div>`;
+    function block(icon,label,val){ if(!val) return; h+=`<div style="background:var(--cream);border-radius:10px;padding:12px 14px;margin-bottom:10px;"><div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--steel);margin-bottom:4px;">${icon} ${label}</div><div style="white-space:pre-wrap;">${escapeHtml(val)}</div></div>`; }
+    block('🛏','Capacité', [d.bedrooms?d.bedrooms+' ch.':'', d.capacity?d.capacity+' pers.':''].filter(Boolean).join(' · '));
+    block('🏢','Étage / situation', d.floor);
+    block('🔑','Code d\'accès / Boîte à clés', d.accessCode);
+    block('📍','Emplacement des clés', d.keyLocation);
+    block('🚪','Instructions d\'accès', d.accessInstructions);
+    block('📶','WiFi', d.wifiName?(d.wifiName+(d.wifiPassword?' · 🔒 '+d.wifiPassword:'')):'');
+    block('🅿️','Parking', d.parking);
+    block('🧹','Instructions de ménage', d.cleaningInstructions);
+    block('✅','Instructions check-in', d.checkinInstructions);
+    block('🚪','Instructions check-out', d.checkoutInstructions);
+    block('📝','Notes', d.notes);
+    if(d.checklist && d.checklist.length){
+      h+=`<div style="background:var(--cream);border-radius:10px;padding:12px 14px;margin-bottom:10px;"><div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--steel);margin-bottom:6px;">🧺 Checklist ménage</div>`+d.checklist.map(it=>`<div style="padding:3px 0;">☐ ${escapeHtml(it)}</div>`).join('')+`</div>`;
+    }
+    const photos=d.photos||[];
+    if(photos.length){
+      h+=`<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">`+photos.map(src=>`<img src="${src}" style="width:110px;height:82px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;" class="cg-photo">`).join('')+`</div>`;
+    }
+    const cont=document.getElementById('propInfoContent');
+    cont.innerHTML = (h.match(/background/) || photos.length) ? h : (h+'<p style="color:var(--steel);">Aucun détail renseigné pour ce logement. Contactez l\'administrateur.</p>');
+    cont.querySelectorAll('.cg-photo').forEach(img=>img.addEventListener('click',()=>{
+      const ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:3000;cursor:zoom-out;';
+      const big=document.createElement('img'); big.src=img.src; big.style.cssText='max-width:92vw;max-height:92vh;border-radius:12px;';
+      ov.appendChild(big); ov.addEventListener('click',()=>ov.remove()); document.body.appendChild(ov);
+    }));
+    document.getElementById('propInfoOverlay').classList.add('show');
+  }
+  document.getElementById('closePropInfoBtn').addEventListener('click',()=>document.getElementById('propInfoOverlay').classList.remove('show'));
+  document.getElementById('propInfoOverlay').addEventListener('click',(e)=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove('show'); });
+
   function renderConcierge(){
     if(currentRole!=='concierge'||!currentConcierge) return;
     const pid=currentConcierge.id, cont=document.getElementById('conciergeContainer'); if(!cont) return;
@@ -3629,7 +3682,7 @@
   }, 2000);
 
   // ---------- Vérification des mises à jour ----------
-  const APP_VERSION = 15; // bumpé à chaque déploiement
+  const APP_VERSION = 16; // bumpé à chaque déploiement
   function showUpdateBanner(){
     if(document.getElementById('updateBanner')) return;
     const b=document.createElement('div');
