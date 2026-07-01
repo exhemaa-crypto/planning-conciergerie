@@ -355,6 +355,27 @@
   .lock-card p{font-size:0.85rem;color:var(--steel);margin:0 0 20px;}
   .lock-card input{width:100%;border:1px solid var(--line);border-radius:12px;padding:14px;font-size:16px;text-align:center;font-family:inherit;color:var(--ink);background:var(--cream);margin-bottom:12px;}
   .lock-card .lock-error{color:#A6432F;font-size:0.82rem;margin-bottom:10px;display:none;}
+  .lock-card select,.lock-card input{margin-bottom:12px;}
+
+  /* ---------- Mode concierge : masque l'interface admin ---------- */
+  body.concierge-mode > .topbar,
+  body.concierge-mode > .bottom-nav,
+  body.concierge-mode > .fab,
+  body.concierge-mode > #view-planning,
+  body.concierge-mode > #view-owners,
+  body.concierge-mode > #view-properties,
+  body.concierge-mode > #view-prestataires,
+  body.concierge-mode > #view-finances{ display:none !important; }
+  body.concierge-mode > #view-concierge{ display:block !important; }
+  body:not(.concierge-mode) > #view-concierge{ display:none !important; }
+
+  /* Cartes concierge */
+  .cg-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:12px;}
+  .cg-card .cg-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+  .cg-card .cg-title{font-family:Georgia,'Times New Roman',serif;font-size:1.05rem;}
+  .cg-card .cg-meta{font-size:0.85rem;color:var(--steel);display:flex;flex-direction:column;gap:3px;margin-top:6px;}
+  .cg-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .cg-section-title{font-size:0.95rem;margin:18px 0 10px;color:var(--ink);}
 
   /* ---------- Status badges ---------- */
   .status-badge{font-size:0.66rem;font-weight:600;padding:3px 9px;border-radius:999px;cursor:pointer;user-select:none;border:1px solid transparent;white-space:nowrap;}
@@ -416,16 +437,39 @@
 </head>
 <body>
 
-<!-- ================= LOCK SCREEN ================= -->
-<div class="lock-screen" id="lockScreen">
-  <form class="lock-card" id="lockForm">
-    <div class="lock-icon">🔒</div>
-    <h2>Planning</h2>
-    <p>Entrez votre mot de passe pour accéder à l'application.</p>
-    <input type="password" id="lockInput" placeholder="Mot de passe" autocomplete="current-password" autofocus>
-    <div class="lock-error" id="lockError">Mot de passe incorrect.</div>
-    <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Déverrouiller</button>
-  </form>
+<!-- ================= LOGIN SCREEN ================= -->
+<div class="lock-screen" id="loginScreen">
+  <div class="lock-card" id="loginCard">
+    <!-- Étape 1 : choix du rôle -->
+    <div id="loginStepRole">
+      <div class="lock-icon">🏨</div>
+      <h2>Planning Conciergerie</h2>
+      <p>Comment souhaitez-vous vous connecter ?</p>
+      <button type="button" class="btn btn-primary" id="chooseAdminBtn" style="width:100%;justify-content:center;margin-bottom:10px;">👤 Administrateur</button>
+      <button type="button" class="btn btn-ghost on-light" id="chooseConciergeBtn" style="width:100%;justify-content:center;">🧹 Concierge / Prestataire</button>
+    </div>
+    <!-- Étape 2a : mot de passe admin -->
+    <form id="loginAdminForm" style="display:none;">
+      <div class="lock-icon">👤</div>
+      <h2>Administrateur</h2>
+      <p id="adminLoginHint">Entrez le mot de passe administrateur.</p>
+      <input type="password" id="adminPwInput" placeholder="Mot de passe" autocomplete="current-password">
+      <div class="lock-error" id="adminLoginError">Mot de passe incorrect.</div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Entrer</button>
+      <button type="button" class="btn btn-ghost on-light btn-sm loginBack" style="width:100%;justify-content:center;margin-top:8px;">← Retour</button>
+    </form>
+    <!-- Étape 2b : connexion concierge -->
+    <form id="loginConciergeForm" style="display:none;">
+      <div class="lock-icon">🧹</div>
+      <h2>Concierge</h2>
+      <p>Sélectionnez votre nom et entrez votre code.</p>
+      <select id="conciergeSelect" style="width:100%;border:1px solid var(--line);border-radius:12px;padding:14px;font-size:16px;font-family:inherit;color:var(--ink);background:var(--cream);margin-bottom:12px;"></select>
+      <input type="password" id="conciergePinInput" placeholder="Code PIN (si défini)" inputmode="numeric">
+      <div class="lock-error" id="conciergeLoginError">Code incorrect.</div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Se connecter</button>
+      <button type="button" class="btn btn-ghost on-light btn-sm loginBack" style="width:100%;justify-content:center;margin-top:8px;">← Retour</button>
+    </form>
+  </div>
 </div>
 
 <div class="topbar">
@@ -493,7 +537,8 @@
 
     <div class="import-status" id="syncStatus"></div>
 
-    <div class="modal-actions" style="margin-top:16px;">
+    <div class="modal-actions" style="margin-top:16px;justify-content:space-between;">
+      <button type="button" class="btn btn-danger btn-sm" id="adminLogoutBtn">🚪 Déconnexion</button>
       <button type="button" class="btn btn-ghost on-light btn-sm" id="closeSyncBtn">Fermer</button>
     </div>
   </div>
@@ -862,6 +907,41 @@
   </div>
 </div>
 
+<!-- ================= CONCIERGE VIEW ================= -->
+<div id="view-concierge" style="display:none;">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div>Espace Concierge <small id="conciergeName">—</small></div>
+      </div>
+      <div class="nav-actions">
+        <button class="btn btn-ghost" id="conciergeLogoutBtn">Déconnexion</button>
+      </div>
+    </div>
+  </div>
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">Concierge</div>
+      <h1 id="conciergeHello">Bonjour</h1>
+      <p>Acceptez ou refusez les missions qui vous sont proposées, et retrouvez ci-dessous votre planning des missions à faire.</p>
+    </div>
+  </div>
+  <div class="layout" style="grid-template-columns:1fr;">
+    <main class="main-col">
+      <div class="toolbar">
+        <button class="filter-chip active" id="conciergeTabTodo">📋 Mon planning</button>
+        <button class="filter-chip" id="conciergeTabProposed">📨 Missions proposées <span id="proposedBadge" class="source-pill" style="margin-left:6px;display:none;"></span></button>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <label for="conciergeMonth" style="font-size:0.82rem;color:var(--steel);">Mois :</label>
+          <input type="month" id="conciergeMonth" style="border:1px solid var(--line);background:var(--cream);border-radius:10px;padding:8px 12px;font-size:0.82rem;color:var(--ink);font-family:inherit;outline:none;">
+        </div>
+      </div>
+      <div id="conciergeContainer"></div>
+    </main>
+  </div>
+</div>
+
 <!-- ================= EXPENSE MODAL ================= -->
 <div class="modal-overlay" id="expenseModalOverlay">
   <div class="modal" style="max-width:460px;">
@@ -928,9 +1008,15 @@
           <input type="email" id="prestaEmail" placeholder="marie@example.com">
         </div>
       </div>
-      <div class="form-row">
-        <label for="prestaSpecialty">Spécialité</label>
-        <input type="text" id="prestaSpecialty" placeholder="Ex : Ménage, Linge, Check-in…">
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="prestaSpecialty">Spécialité</label>
+          <input type="text" id="prestaSpecialty" placeholder="Ex : Ménage, Linge, Check-in…">
+        </div>
+        <div class="form-row">
+          <label for="prestaPin">🔑 Code PIN de connexion</label>
+          <input type="text" id="prestaPin" inputmode="numeric" placeholder="Ex : 1234 (pour l'espace concierge)">
+        </div>
       </div>
       <div class="form-row">
         <label for="prestaNotes">Notes</label>
@@ -1372,7 +1458,7 @@
   function saveSettings(){ save(SETTINGS_KEY, settings); syncToCloud(); }
 
   // ---------- CRUD Prestataires ----------
-  function addPresta(d){ const p={id:uid(),name:d.name,phone:d.phone||'',email:d.email||'',specialty:d.specialty||'',notes:d.notes||''}; prestataires.push(p); savePrestas(); return p; }
+  function addPresta(d){ const p={id:uid(),name:d.name,phone:d.phone||'',email:d.email||'',specialty:d.specialty||'',pin:d.pin||'',notes:d.notes||''}; prestataires.push(p); savePrestas(); return p; }
   function updatePresta(id,d){ const i=prestataires.findIndex(p=>p.id===id); if(i>-1){prestataires[i]=Object.assign({},prestataires[i],d);savePrestas();} }
   function deletePresta(id){ prestataires=prestataires.filter(p=>p.id!==id); events.forEach(e=>{if(e.prestaId===id){e.prestaId=null;}}); savePrestas(); saveEvents(); }
   function findPrestaById(id){ return prestataires.find(p=>p.id===id)||null; }
@@ -1598,7 +1684,14 @@
         metaHtml+=`<span class="tag tag-co">Check-out${d?' — '+d+t:''}${p}${flags}</span>`;
       }
     }
-    if(ev.prestaId){ const pr=findPrestaById(ev.prestaId); if(pr) metaHtml+=`<span>🔧 ${escapeHtml(pr.name)}</span>`; }
+    if(ev.prestaId){
+      const pr=findPrestaById(ev.prestaId);
+      if(pr){
+        const resp=ev.prestaResponse||'pending';
+        const respBadge=resp==='accepted'?'<span class="status-badge status-done">✓ accepté</span>':resp==='refused'?'<span class="status-badge" style="background:#F6E6E4;color:#A6432F;">✗ refusé</span>':'<span class="status-badge status-todo">⏳ en attente</span>';
+        metaHtml+=`<span>🔧 ${escapeHtml(pr.name)} ${respBadge}</span>`;
+      }
+    }
     // Infos voyageur (arrivées / départs)
     if(ev.type==='arrivee'||ev.type==='depart'){
       if(ev.guestName) metaHtml+=`<span>🧳 ${escapeHtml(ev.guestName)}</span>`;
@@ -1793,6 +1886,10 @@
     };
     // Statut par défaut pour une nouvelle mission de ménage (édition : statut préservé)
     if(type==='service' && !id) data.status='todo';
+    // Assignation d'un prestataire => mission "proposée" (en attente d'acceptation)
+    const oldEv=id?events.find(e=>e.id===id):null;
+    if(data.prestaId){ if(!oldEv || oldEv.prestaId!==data.prestaId) data.prestaResponse='pending'; }
+    else { data.prestaResponse=null; }
     if(id) updateEvent(id,data); else addEvent(data);
     closeModal(); renderAll();
   });
@@ -2157,6 +2254,10 @@
   document.getElementById('closeSyncBtn').addEventListener('click',()=>{
     document.getElementById('dataSyncOverlay').classList.remove('show');
   });
+  document.getElementById('adminLogoutBtn').addEventListener('click',()=>{
+    document.getElementById('dataSyncOverlay').classList.remove('show');
+    logout();
+  });
   document.getElementById('dataSyncOverlay').addEventListener('click',(e)=>{
     if(e.target===e.currentTarget) e.currentTarget.classList.remove('show');
   });
@@ -2202,45 +2303,164 @@
       return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
     }catch(e){ return 'plain:'+str; } // repli si crypto.subtle indisponible
   }
-  function isUnlocked(){ return sessionStorage.getItem('planning_v2_unlocked')==='1'; }
-  function applyLockFromSettings(){
-    const lock=document.getElementById('lockScreen'); if(!lock) return;
-    const hash=settings && settings.pwHash;
-    if(hash && !isUnlocked()){ lock.classList.add('show'); setTimeout(()=>{const i=document.getElementById('lockInput'); if(i) i.focus();},80); }
-    else lock.classList.remove('show');
-    updatePwStatusText();
+  // ===== Sessions & rôles =====
+  const SESSION_KEY='planning_v2_session';
+  let currentRole=null, currentConcierge=null, conciergeTab='todo';
+  function getSession(){ try{ return JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); }catch(e){ return null; } }
+  function setSession(s){ if(s) localStorage.setItem(SESSION_KEY, JSON.stringify(s)); else localStorage.removeItem(SESSION_KEY); }
+
+  function showLogin(){
+    document.getElementById('loginScreen').classList.add('show');
+    document.getElementById('loginStepRole').style.display='block';
+    document.getElementById('loginAdminForm').style.display='none';
+    document.getElementById('loginConciergeForm').style.display='none';
   }
+  function applyAuth(){
+    const sess=getSession();
+    if(!sess){ currentRole=null; document.body.classList.remove('concierge-mode'); showLogin(); return; }
+    if(sess.role==='admin'){
+      currentRole='admin'; currentConcierge=null;
+      document.body.classList.remove('concierge-mode');
+      document.getElementById('loginScreen').classList.remove('show');
+      switchTab('planning');
+    } else if(sess.role==='concierge'){
+      const p=findPrestaById(sess.prestaId);
+      if(!p){ setSession(null); showLogin(); return; }
+      currentRole='concierge'; currentConcierge=p;
+      document.body.classList.add('concierge-mode');
+      document.getElementById('loginScreen').classList.remove('show');
+      enterConcierge(p);
+    }
+  }
+  // Appelé après une synchro cloud : garde la session, rafraîchit la bonne vue
+  function applyLockFromSettings(){ if(!getSession()){ showLogin(); } else if(currentRole==='concierge'){ const p=findPrestaById(getSession().prestaId); if(!p){ logout(); } else { currentConcierge=p; renderConcierge(); } } }
+  function logout(){ setSession(null); currentRole=null; currentConcierge=null; document.body.classList.remove('concierge-mode'); document.getElementById('conciergePinInput').value=''; showLogin(); }
+
   function updatePwStatusText(){
     const t=document.getElementById('pwStatusText'); if(!t) return;
-    if(settings && settings.pwHash){ t.textContent='🔒 Un mot de passe est actif. Laissez vide et enregistrez pour le désactiver.'; }
-    else { t.textContent="Aucun mot de passe défini. L'app est accessible à tous ceux qui ont le lien."; }
+    if(settings && settings.pwHash){ t.textContent='🔒 Un mot de passe administrateur est actif. Laissez vide et enregistrez pour le désactiver.'; }
+    else { t.textContent="Aucun mot de passe admin. N'importe qui peut ouvrir le mode Administrateur."; }
   }
-  document.getElementById('lockForm').addEventListener('submit', async(e)=>{
-    e.preventDefault();
-    const val=document.getElementById('lockInput').value;
-    const h=await sha256(val);
-    if(h===settings.pwHash){
-      sessionStorage.setItem('planning_v2_unlocked','1');
-      document.getElementById('lockScreen').classList.remove('show');
-      document.getElementById('lockInput').value='';
-      document.getElementById('lockError').style.display='none';
-    } else {
-      document.getElementById('lockError').style.display='block';
-    }
+
+  // ===== Écran de connexion =====
+  document.getElementById('chooseAdminBtn').addEventListener('click',()=>{
+    document.getElementById('loginStepRole').style.display='none';
+    document.getElementById('loginAdminForm').style.display='block';
+    const hint=document.getElementById('adminLoginHint'), inp=document.getElementById('adminPwInput');
+    document.getElementById('adminLoginError').style.display='none';
+    if(!(settings&&settings.pwHash)){ hint.textContent='Aucun mot de passe défini — cliquez sur Entrer.'; inp.style.display='none'; }
+    else { hint.textContent='Entrez le mot de passe administrateur.'; inp.style.display=''; setTimeout(()=>inp.focus(),60); }
   });
+  document.getElementById('loginAdminForm').addEventListener('submit', async(e)=>{
+    e.preventDefault();
+    if(settings&&settings.pwHash){
+      const h=await sha256(document.getElementById('adminPwInput').value);
+      if(h!==settings.pwHash){ document.getElementById('adminLoginError').style.display='block'; return; }
+    }
+    document.getElementById('adminLoginError').style.display='none';
+    document.getElementById('adminPwInput').value='';
+    setSession({role:'admin'}); applyAuth();
+  });
+  document.getElementById('chooseConciergeBtn').addEventListener('click',()=>{
+    document.getElementById('loginStepRole').style.display='none';
+    document.getElementById('loginConciergeForm').style.display='block';
+    document.getElementById('conciergeLoginError').style.display='none';
+    const sel=document.getElementById('conciergeSelect'); sel.innerHTML='';
+    if(prestataires.length===0){ const o=document.createElement('option'); o.value=''; o.textContent="(Aucun prestataire — voir l'administrateur)"; sel.appendChild(o); }
+    else prestataires.forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.textContent=p.name; sel.appendChild(o); });
+  });
+  document.getElementById('loginConciergeForm').addEventListener('submit',(e)=>{
+    e.preventDefault();
+    const p=findPrestaById(document.getElementById('conciergeSelect').value);
+    const err=document.getElementById('conciergeLoginError');
+    if(!p){ err.textContent='Sélectionnez votre nom.'; err.style.display='block'; return; }
+    if(p.pin && p.pin!==document.getElementById('conciergePinInput').value.trim()){ err.textContent='Code PIN incorrect.'; err.style.display='block'; return; }
+    err.style.display='none'; document.getElementById('conciergePinInput').value='';
+    setSession({role:'concierge', prestaId:p.id, name:p.name}); applyAuth();
+  });
+  document.querySelectorAll('.loginBack').forEach(b=>b.addEventListener('click',showLogin));
+  document.getElementById('conciergeLogoutBtn').addEventListener('click', logout);
+
   document.getElementById('pwSetBtn').addEventListener('click', async()=>{
     const pw=document.getElementById('pwSetInput').value;
-    if(pw){ settings.pwHash=await sha256(pw); }
-    else { delete settings.pwHash; }
+    if(pw){ settings.pwHash=await sha256(pw); } else { delete settings.pwHash; }
     saveSettings();
-    sessionStorage.setItem('planning_v2_unlocked','1'); // l'appareil qui définit reste déverrouillé
     document.getElementById('pwSetInput').value='';
     updatePwStatusText();
     const el=document.getElementById('syncStatus');
-    el.textContent=pw?'Mot de passe enregistré et synchronisé.':'Mot de passe désactivé.'; el.className='import-status show ok';
+    el.textContent=pw?'Mot de passe administrateur enregistré et synchronisé.':'Mot de passe administrateur désactivé.'; el.className='import-status show ok';
   });
-  // Verrouillage au démarrage (depuis les réglages mis en cache)
-  applyLockFromSettings();
+
+  // ===== Vue Concierge =====
+  function enterConcierge(presta){
+    currentConcierge=presta;
+    document.getElementById('conciergeName').textContent=presta.name;
+    document.getElementById('conciergeHello').textContent='Bonjour '+presta.name;
+    const mp=document.getElementById('conciergeMonth'); if(!mp.value){ const n=new Date(); mp.value=n.getFullYear()+'-'+pad(n.getMonth()+1); }
+    renderConcierge();
+  }
+  function conciergeMissionCard(ev, mode){
+    const f=ev.propertyId?findPropertyById(ev.propertyId):null;
+    const lieu=f?(f.property.name?f.property.name+' — '+f.property.address:f.property.address):(ev.location||'');
+    const d=new Date(ev.date+'T00:00:00');
+    const dateLabel=capitalize(DAYS_FULL[d.getDay()])+' '+d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear();
+    const card=document.createElement('div'); card.className='cg-card';
+    let meta=`<span>📅 ${dateLabel}${ev.time?' · '+ev.time:''}</span>`;
+    if(lieu) meta+=`<span>📍 ${escapeHtml(lieu)}</span>`;
+    if(ev.stayStart&&ev.stayEnd) meta+=`<span>🛎️ ${ev.guestName?escapeHtml(ev.guestName)+' · ':''}${formatDateFR(ev.stayStart)} → ${formatDateFR(ev.stayEnd)}</span>`;
+    if(ev.details) meta+=`<span>📝 ${escapeHtml(ev.details)}</span>`;
+    card.innerHTML=`<div class="cg-head"><div class="cg-title">${escapeHtml(ev.title||'Mission')}</div></div><div class="cg-meta">${meta}</div>`;
+    const actions=document.createElement('div'); actions.className='cg-actions';
+    if(mode==='proposed'){
+      const acc=document.createElement('button'); acc.className='btn btn-primary btn-sm'; acc.textContent='✓ Accepter';
+      acc.addEventListener('click',()=>{ updateEvent(ev.id,{prestaResponse:'accepted'}); renderConcierge(); });
+      const ref=document.createElement('button'); ref.className='btn btn-danger btn-sm'; ref.textContent='✗ Refuser';
+      ref.addEventListener('click',()=>{ if(confirm('Refuser cette mission ?')){ updateEvent(ev.id,{prestaResponse:'refused'}); renderConcierge(); } });
+      actions.appendChild(acc); actions.appendChild(ref);
+    } else {
+      if(ev.status==='done'){
+        const b=document.createElement('span'); b.className='status-badge status-done'; b.textContent='✓ Terminé';
+        actions.appendChild(b);
+        const undo=document.createElement('button'); undo.className='btn btn-ghost on-light btn-sm'; undo.textContent='Annuler';
+        undo.addEventListener('click',()=>{ updateEvent(ev.id,{status:'confirmed'}); renderConcierge(); });
+        actions.appendChild(undo);
+      } else {
+        const done=document.createElement('button'); done.className='btn btn-primary btn-sm'; done.textContent='✓ Marquer fait';
+        done.addEventListener('click',()=>{ updateEvent(ev.id,{status:'done'}); renderConcierge(); });
+        actions.appendChild(done);
+      }
+    }
+    card.appendChild(actions);
+    return card;
+  }
+  function renderConcierge(){
+    if(currentRole!=='concierge'||!currentConcierge) return;
+    const pid=currentConcierge.id, cont=document.getElementById('conciergeContainer'); if(!cont) return;
+    cont.innerHTML='';
+    const month=document.getElementById('conciergeMonth').value;
+    const mine=events.filter(e=>e.prestaId===pid);
+    const proposed=mine.filter(e=>(e.prestaResponse||'pending')==='pending').sort((a,b)=>a.date<b.date?-1:1);
+    const accepted=mine.filter(e=>e.prestaResponse==='accepted'&&(!month||(e.date||'').startsWith(month))).sort((a,b)=>a.date<b.date?-1:1);
+    const badge=document.getElementById('proposedBadge');
+    if(proposed.length){ badge.style.display='inline-block'; badge.textContent=proposed.length; } else badge.style.display='none';
+    if(conciergeTab==='proposed'){
+      if(proposed.length===0){ cont.innerHTML='<div class="empty-state"><div class="display">Aucune mission proposée</div><p>Vous serez notifié ici quand l\'administrateur vous enverra une mission.</p></div>'; return; }
+      proposed.forEach(ev=>cont.appendChild(conciergeMissionCard(ev,'proposed')));
+    } else {
+      if(accepted.length===0){ cont.innerHTML='<div class="empty-state"><div class="display">Aucune mission à faire</div><p>Vos missions acceptées pour ce mois apparaîtront ici.</p></div>'; return; }
+      let lastDate=null;
+      accepted.forEach(ev=>{
+        if(ev.date!==lastDate){ lastDate=ev.date; const d=new Date(ev.date+'T00:00:00'); const t=document.createElement('div'); t.className='cg-section-title'; t.textContent=capitalize(DAYS_FULL[d.getDay()])+' '+d.getDate()+' '+MONTHS[d.getMonth()]; cont.appendChild(t); }
+        cont.appendChild(conciergeMissionCard(ev,'todo'));
+      });
+    }
+  }
+  document.getElementById('conciergeTabTodo').addEventListener('click',()=>{ conciergeTab='todo'; document.getElementById('conciergeTabTodo').classList.add('active'); document.getElementById('conciergeTabProposed').classList.remove('active'); renderConcierge(); });
+  document.getElementById('conciergeTabProposed').addEventListener('click',()=>{ conciergeTab='proposed'; document.getElementById('conciergeTabProposed').classList.add('active'); document.getElementById('conciergeTabTodo').classList.remove('active'); renderConcierge(); });
+  document.getElementById('conciergeMonth').addEventListener('change', renderConcierge);
+
+  // Connexion au démarrage
+  applyAuth();
 
   // ---------- Properties rendering ----------
   let propSearch='', propOwnerFilter='';
@@ -2756,6 +2976,7 @@
     document.getElementById('prestaPhone').value=p?(p.phone||''):'';
     document.getElementById('prestaEmail').value=p?(p.email||''):'';
     document.getElementById('prestaSpecialty').value=p?(p.specialty||''):'';
+    document.getElementById('prestaPin').value=p?(p.pin||''):'';
     document.getElementById('prestaNotes').value=p?(p.notes||''):'';
     document.getElementById('deletePrestaBtn').style.display=p?'inline-flex':'none';
     prestaOverlay.classList.add('show');
@@ -2764,7 +2985,7 @@
   document.getElementById('prestaForm').addEventListener('submit',(e)=>{
     e.preventDefault();
     const id=document.getElementById('prestaId').value;
-    const d={name:document.getElementById('prestaName').value.trim(),phone:document.getElementById('prestaPhone').value.trim(),email:document.getElementById('prestaEmail').value.trim(),specialty:document.getElementById('prestaSpecialty').value.trim(),notes:document.getElementById('prestaNotes').value.trim()};
+    const d={name:document.getElementById('prestaName').value.trim(),phone:document.getElementById('prestaPhone').value.trim(),email:document.getElementById('prestaEmail').value.trim(),specialty:document.getElementById('prestaSpecialty').value.trim(),pin:document.getElementById('prestaPin').value.trim(),notes:document.getElementById('prestaNotes').value.trim()};
     if(id) updatePresta(id,d); else addPresta(d);
     prestaOverlay.classList.remove('show');
     renderPrestataires(); populatePrestaSelect('');
@@ -3408,7 +3629,7 @@
   }, 2000);
 
   // ---------- Vérification des mises à jour ----------
-  const APP_VERSION = 14; // bumpé à chaque déploiement
+  const APP_VERSION = 15; // bumpé à chaque déploiement
   function showUpdateBanner(){
     if(document.getElementById('updateBanner')) return;
     const b=document.createElement('div');
