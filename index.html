@@ -739,6 +739,10 @@
           <input type="number" id="pdCapacity" min="1" placeholder="Ex : 4">
         </div>
       </div>
+      <div class="form-row">
+        <label for="pdDefaultPresta">🔧 Concierge attitré (assigné automatiquement aux événements)</label>
+        <select id="pdDefaultPresta"><option value="">— Aucun —</option></select>
+      </div>
       <div class="form-grid">
         <div class="form-row">
           <label for="pdBedrooms">Chambres</label>
@@ -1928,6 +1932,11 @@
       const priceInput=document.getElementById('eventPrice');
       if(f.property.cleaningPrice) priceInput.value=f.property.cleaningPrice;
       else priceInput.value='';
+      // Pré-sélectionner le concierge attitré (visible pour un ménage)
+      const prestaSel=document.getElementById('eventPresta');
+      if(f.property.defaultPrestaId && findPrestaById(f.property.defaultPrestaId) && !prestaSel.value){
+        prestaSel.value=f.property.defaultPrestaId;
+      }
     }
   });
 
@@ -1941,15 +1950,19 @@
     const id=document.getElementById('eventId').value;
     const priceVal=document.getElementById('eventPrice').value;
     const type=document.getElementById('eventType').value;
+    const propId=document.getElementById('eventProperty').value||null;
+    // Prestataire : choisi manuellement (ménage) sinon concierge attitré du logement
+    let assignedPresta=type==='service'?(document.getElementById('eventPresta').value||null):null;
+    if(propId && !assignedPresta){ const f=findPropertyById(propId); if(f && f.property.defaultPrestaId && findPrestaById(f.property.defaultPrestaId)) assignedPresta=f.property.defaultPrestaId; }
     const data={
       title:document.getElementById('eventTitle').value.trim(),
       date:document.getElementById('eventDate').value,
       time:document.getElementById('eventTime').value,
       type,
-      propertyId:document.getElementById('eventProperty').value||null,
+      propertyId:propId,
       location:document.getElementById('eventLocation').value.trim(),
       price:priceVal===''?null:(parseFloat(priceVal)||0),
-      prestaId:type==='service'?(document.getElementById('eventPresta').value||null):null,
+      prestaId:assignedPresta,
       hasCi:type==='service'?document.getElementById('eventHasCi').checked:false,
       ciDate:type==='service'&&document.getElementById('eventHasCi').checked?document.getElementById('eventCiDate').value:'',
       ciTime:type==='service'&&document.getElementById('eventHasCi').checked?document.getElementById('eventCiTime').value:'',
@@ -1970,8 +1983,8 @@
       stayEnd:type==='service'?document.getElementById('eventStayEnd').value:'',
       details:document.getElementById('eventDetails').value.trim()
     };
-    // Statut par défaut pour une nouvelle mission de ménage (édition : statut préservé)
-    if(type==='service' && !id) data.status='todo';
+    // Statut par défaut pour un nouvel événement assigné (ménage ou concierge attitré)
+    if(!id && (type==='service' || data.prestaId)) data.status='todo';
     // Assignation d'un prestataire => mission "proposée" (en attente d'acceptation)
     const oldEv=id?events.find(e=>e.id===id):null;
     if(data.prestaId){ if(!oldEv || oldEv.prestaId!==data.prestaId) data.prestaResponse='pending'; }
@@ -2953,6 +2966,11 @@
     document.getElementById('pdCheckoutInstructions').value=d.checkoutInstructions||'';
     document.getElementById('pdNotes').value=d.notes||'';
     document.getElementById('pdIcalUrl').value=d.icalUrl||'';
+    // Concierge attitré
+    const dpSel=document.getElementById('pdDefaultPresta');
+    dpSel.innerHTML='<option value="">— Aucun —</option>';
+    prestataires.forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.textContent=p.name+(p.specialty?' ('+p.specialty+')':''); dpSel.appendChild(o); });
+    dpSel.value=prop.defaultPrestaId||'';
     currentPhotos=[...(d.photos||[])];
     currentChecklist=[...(d.checklist||[])];
     renderPhotoPreview();
@@ -3034,6 +3052,7 @@
       name:document.getElementById('pdName').value.trim(),
       address:document.getElementById('pdAddress').value.trim(),
       cleaningPrice:parseFloat(document.getElementById('pdCleaningPrice').value)||0,
+      defaultPrestaId:document.getElementById('pdDefaultPresta').value||null,
       details:{
         capacity:document.getElementById('pdCapacity').value.trim(),
         bedrooms:document.getElementById('pdBedrooms').value.trim(),
@@ -3893,7 +3912,7 @@
   }, 2000);
 
   // ---------- Vérification des mises à jour ----------
-  const APP_VERSION = 19; // bumpé à chaque déploiement
+  const APP_VERSION = 20; // bumpé à chaque déploiement
   function showUpdateBanner(){
     if(document.getElementById('updateBanner')) return;
     const b=document.createElement('div');
