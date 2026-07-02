@@ -953,6 +953,48 @@
   </div>
 </div>
 
+<!-- ================= SEND MESSAGE MODAL (réutilisable) ================= -->
+<div class="modal-overlay" id="sendMsgOverlay">
+  <div class="modal" style="max-width:460px;">
+    <h2 id="sendMsgTitle">Envoyer un message</h2>
+    <div class="form-row">
+      <label for="sendMsgText">Message</label>
+      <textarea id="sendMsgText" style="min-height:150px;"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button type="button" class="btn btn-primary btn-sm" id="sendMsgWhatsapp" style="background:#25D366;color:#fff;">📲 WhatsApp</button>
+      <button type="button" class="btn btn-ghost on-light btn-sm" id="sendMsgSms">💬 SMS</button>
+      <button type="button" class="btn btn-ghost on-light btn-sm" id="sendMsgEmail">✉️ Email</button>
+      <button type="button" class="btn btn-ghost on-light btn-sm" id="sendMsgCopy">📋 Copier</button>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost on-light btn-sm" id="closeSendMsgBtn">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= COMPLETION MODAL (preuve de fin de mission) ================= -->
+<div class="modal-overlay" id="completionOverlay">
+  <div class="modal" style="max-width:480px;">
+    <h2>✓ Mission terminée</h2>
+    <input type="hidden" id="completionEventId">
+    <p style="font-size:0.85rem;color:var(--steel);margin-bottom:14px;">Ajoutez une photo et/ou une note prouvant que le ménage est fait (optionnel).</p>
+    <div id="completionPhotoList" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;"></div>
+    <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;background:var(--cream);border:1px dashed var(--line);border-radius:10px;padding:10px 16px;font-size:0.85rem;color:var(--steel);margin-bottom:12px;">
+      📷 Ajouter une photo
+      <input type="file" id="completionPhotoInput" accept="image/*" capture="environment" multiple style="display:none;">
+    </label>
+    <div class="form-row">
+      <label for="completionNote">Note (optionnel)</label>
+      <textarea id="completionNote" placeholder="Ex : RAS, tout est propre. Ampoule salon à changer…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost on-light btn-sm" id="cancelCompletionBtn">Annuler</button>
+      <button type="button" class="btn btn-primary btn-sm" id="confirmCompletionBtn">✓ Valider « fait »</button>
+    </div>
+  </div>
+</div>
+
 <!-- ================= EXPENSE MODAL ================= -->
 <div class="modal-overlay" id="expenseModalOverlay">
   <div class="modal" style="max-width:460px;">
@@ -1517,6 +1559,24 @@
   function addEvent(ev){ ev.id=ev.id||uid(); events.push(ev); saveEvents(); }
   function updateEvent(id,data){ const i=events.findIndex(e=>e.id===id); if(i>-1){events[i]=Object.assign({},events[i],data);saveEvents();} }
   function deleteEvent(id){ events=events.filter(e=>e.id!==id); saveEvents(); }
+  // Suppression avec possibilité d'annuler
+  let lastDeletedEvent=null;
+  function deleteEventWithUndo(id){
+    const ev=events.find(e=>e.id===id); if(!ev) return;
+    lastDeletedEvent=JSON.parse(JSON.stringify(ev));
+    deleteEvent(id); renderAll();
+    showUndoToast('Événement supprimé', ()=>{ if(lastDeletedEvent){ events.push(lastDeletedEvent); lastDeletedEvent=null; saveEvents(); renderAll(); } });
+  }
+  function showUndoToast(msg, undoFn){
+    const old=document.getElementById('undoToast'); if(old) old.remove();
+    const el=document.createElement('div'); el.id='undoToast';
+    el.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--cream);padding:10px 14px;border-radius:20px;font-size:0.85rem;z-index:1600;box-shadow:0 8px 24px rgba(0,0,0,0.3);display:flex;align-items:center;gap:12px;max-width:90vw;';
+    const span=document.createElement('span'); span.textContent=msg; el.appendChild(span);
+    const btn=document.createElement('button'); btn.textContent='↩ Annuler'; btn.style.cssText='background:var(--gold);color:var(--ink);border:none;border-radius:14px;padding:5px 12px;font-weight:600;cursor:pointer;font-family:inherit;';
+    btn.addEventListener('click',()=>{ undoFn(); el.remove(); });
+    el.appendChild(btn); document.body.appendChild(el);
+    setTimeout(()=>{ if(el.parentNode) el.remove(); }, 8000);
+  }
   function clearAll(){ events=[]; saveEvents(); }
 
   // ---------- CRUD Owners ----------
@@ -1722,10 +1782,22 @@
     // Actions
     const actions=document.createElement('div'); actions.className='event-actions';
     if(ev.source){ const pill=document.createElement('span'); pill.className='source-pill'; pill.textContent=ev.source; actions.appendChild(pill); }
+    if((ev.completionPhotos&&ev.completionPhotos.length)||ev.completionNote){
+      const proof=document.createElement('div'); proof.className='icon-btn'; proof.title='Voir la preuve de fin de mission'; proof.textContent='📸';
+      proof.addEventListener('click',()=>showCompletionProof(ev)); actions.appendChild(proof);
+    }
+    if(ev.prestaId && findPrestaById(ev.prestaId)){
+      const notif=document.createElement('div'); notif.className='icon-btn'; notif.title='Prévenir le concierge'; notif.textContent='🔔';
+      notif.addEventListener('click',()=>notifyConcierge(ev)); actions.appendChild(notif);
+    }
+    if((ev.type==='arrivee'||ev.type==='depart')){
+      const gmsg=document.createElement('div'); gmsg.className='icon-btn'; gmsg.title='Message au voyageur'; gmsg.textContent='💬';
+      gmsg.addEventListener('click',()=>messageGuest(ev)); actions.appendChild(gmsg);
+    }
     const editBtn=document.createElement('div'); editBtn.className='icon-btn'; editBtn.title='Modifier'; editBtn.textContent='✎';
     editBtn.addEventListener('click',()=>openModal(ev)); actions.appendChild(editBtn);
     const delBtn=document.createElement('div'); delBtn.className='icon-btn'; delBtn.title='Supprimer'; delBtn.textContent='🗑';
-    delBtn.addEventListener('click',()=>{ if(confirm('Supprimer cet événement ?')){ deleteEvent(ev.id); renderAll(); } });
+    delBtn.addEventListener('click',()=>deleteEventWithUndo(ev.id));
     actions.appendChild(delBtn);
 
     card.appendChild(time); card.appendChild(body); card.appendChild(actions);
@@ -1907,7 +1979,7 @@
 
   document.getElementById('deleteEventBtn').addEventListener('click',()=>{
     const id=document.getElementById('eventId').value;
-    if(id&&confirm('Supprimer cet événement ?')){ deleteEvent(id); closeModal(); renderAll(); }
+    if(id){ closeModal(); deleteEventWithUndo(id); }
   });
 
   // ---------- Calendar nav ----------
@@ -1957,15 +2029,19 @@
   });
 
   document.getElementById('dedupeBtn').addEventListener('click',()=>{
-    const seen=new Set(), before=events.length;
-    events=events.filter(ev=>{
-      if(!['arrivee','depart','service'].includes(ev.type)) return true;
-      const k=normalizeAddr(ev.title)+'|'+ev.date+'|'+(ev.time||'');
-      if(seen.has(k)) return false; seen.add(k); return true;
+    // Ne retire QUE les vrais doublons : même titre + date + heure + logement + type
+    const seen=new Set();
+    const toRemove=events.filter(ev=>{
+      const k=normalizeAddr(ev.title)+'|'+ev.date+'|'+(ev.time||'')+'|'+(ev.propertyId||'')+'|'+(ev.type||'');
+      if(seen.has(k)) return true; seen.add(k); return false;
     });
-    const removed=before-events.length;
-    if(removed>0){ saveEvents(); renderAll(); showImportStatus(removed+' doublon(s) supprimé(s).',true); }
-    else showImportStatus('Aucun doublon trouvé.',false);
+    if(toRemove.length===0){ showImportStatus('Aucun doublon trouvé.',false); return; }
+    if(!confirm(toRemove.length+' doublon(s) identique(s) trouvé(s) (même titre, date, heure, logement).\n\nLes supprimer ?')) return;
+    const ids=new Set(toRemove.map(e=>e.id));
+    const backup=JSON.parse(JSON.stringify(events));
+    events=events.filter(e=>!ids.has(e.id));
+    saveEvents(); renderAll();
+    showUndoToast(toRemove.length+' doublon(s) supprimé(s)', ()=>{ events=backup; saveEvents(); renderAll(); });
   });
 
   document.getElementById('detectPropertiesBtn').addEventListener('click',()=>{
@@ -2437,17 +2513,65 @@
       if(ev.status==='done'){
         const b=document.createElement('span'); b.className='status-badge status-done'; b.textContent='✓ Terminé';
         actions.appendChild(b);
+        if((ev.completionPhotos&&ev.completionPhotos.length)||ev.completionNote){
+          const seeBtn=document.createElement('button'); seeBtn.className='btn btn-ghost on-light btn-sm'; seeBtn.textContent='📸 Ma preuve';
+          seeBtn.addEventListener('click',()=>showCompletionProof(ev));
+          actions.appendChild(seeBtn);
+        }
         const undo=document.createElement('button'); undo.className='btn btn-ghost on-light btn-sm'; undo.textContent='Annuler';
         undo.addEventListener('click',()=>{ updateEvent(ev.id,{status:'confirmed'}); renderConcierge(); });
         actions.appendChild(undo);
       } else {
         const done=document.createElement('button'); done.className='btn btn-primary btn-sm'; done.textContent='✓ Marquer fait';
-        done.addEventListener('click',()=>{ updateEvent(ev.id,{status:'done'}); renderConcierge(); });
+        done.addEventListener('click',()=>openCompletion(ev));
         actions.appendChild(done);
       }
     }
     card.appendChild(actions);
     return card;
+  }
+
+  // ---------- Preuve de fin de mission ----------
+  let completionPhotos=[];
+  function openCompletion(ev){
+    document.getElementById('completionEventId').value=ev.id;
+    completionPhotos=[...(ev.completionPhotos||[])];
+    document.getElementById('completionNote').value=ev.completionNote||'';
+    renderCompletionPhotos();
+    document.getElementById('completionOverlay').classList.add('show');
+  }
+  function renderCompletionPhotos(){
+    const list=document.getElementById('completionPhotoList'); list.innerHTML='';
+    completionPhotos.forEach((src,i)=>{
+      const wrap=document.createElement('div'); wrap.style.cssText='position:relative;width:90px;height:72px;border-radius:8px;overflow:hidden;border:1px solid var(--line);';
+      const img=document.createElement('img'); img.src=src; img.style.cssText='width:100%;height:100%;object-fit:cover;';
+      const del=document.createElement('button'); del.textContent='✕'; del.style.cssText='position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(14,34,51,0.7);color:#fff;font-size:0.7rem;cursor:pointer;padding:0;';
+      del.addEventListener('click',()=>{ completionPhotos.splice(i,1); renderCompletionPhotos(); });
+      wrap.appendChild(img); wrap.appendChild(del); list.appendChild(wrap);
+    });
+  }
+  document.getElementById('completionPhotoInput').addEventListener('change', async(e)=>{
+    for(const file of Array.from(e.target.files)){ if(completionPhotos.length>=6) break; completionPhotos.push(await compressImage(file)); }
+    renderCompletionPhotos(); e.target.value='';
+  });
+  document.getElementById('cancelCompletionBtn').addEventListener('click',()=>document.getElementById('completionOverlay').classList.remove('show'));
+  document.getElementById('completionOverlay').addEventListener('click',(e)=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove('show'); });
+  document.getElementById('confirmCompletionBtn').addEventListener('click',()=>{
+    const id=document.getElementById('completionEventId').value;
+    updateEvent(id,{ status:'done', completionPhotos:[...completionPhotos], completionNote:document.getElementById('completionNote').value.trim(), completedAt:Date.now() });
+    document.getElementById('completionOverlay').classList.remove('show');
+    renderConcierge();
+  });
+  function showCompletionProof(ev){
+    document.getElementById('propInfoTitle').textContent='📸 Preuve — '+(ev.title||'Mission');
+    let h='';
+    if(ev.completedAt) h+=`<div style="color:var(--steel);margin-bottom:12px;">Terminé le ${formatDateFR(dateOnly(new Date(ev.completedAt)))}</div>`;
+    if(ev.completionNote) h+=`<div style="background:var(--cream);border-radius:10px;padding:12px 14px;margin-bottom:12px;white-space:pre-wrap;">📝 ${escapeHtml(ev.completionNote)}</div>`;
+    const ph=ev.completionPhotos||[];
+    if(ph.length) h+=`<div style="display:flex;flex-wrap:wrap;gap:8px;">`+ph.map(s=>`<img src="${s}" class="cg-photo" style="width:120px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;">`).join('')+`</div>`;
+    const cont=document.getElementById('propInfoContent'); cont.innerHTML=h||'<p style="color:var(--steel);">Aucune preuve.</p>';
+    cont.querySelectorAll('.cg-photo').forEach(img=>img.addEventListener('click',()=>{ const ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:3000;cursor:zoom-out;'; const big=document.createElement('img'); big.src=img.src; big.style.cssText='max-width:92vw;max-height:92vh;border-radius:12px;'; ov.appendChild(big); ov.addEventListener('click',()=>ov.remove()); document.body.appendChild(ov); }));
+    document.getElementById('propInfoOverlay').classList.add('show');
   }
   // Détails du logement (lecture seule, pour le concierge)
   function showPropInfo(propId){
@@ -3179,6 +3303,58 @@
     window.open('mailto:'+(p.email||'')+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(buildMissionText(p)),'_blank');
   });
 
+  // ---------- Modal d'envoi réutilisable (WhatsApp / SMS / Email / Copier) ----------
+  const APP_LINK='https://exhemaa-crypto.github.io/planning-conciergerie/';
+  function frPhone(ph){ return (ph||'').replace(/[^0-9]/g,'').replace(/^0/,'33'); }
+  let sendMsgCtx={phone:'',email:'',subject:''};
+  function openSendModal(opts){
+    sendMsgCtx={phone:opts.phone||'', email:opts.email||'', subject:opts.subject||'Message'};
+    document.getElementById('sendMsgTitle').textContent=opts.title||'Envoyer un message';
+    document.getElementById('sendMsgText').value=opts.message||'';
+    document.getElementById('sendMsgOverlay').classList.add('show');
+  }
+  document.getElementById('closeSendMsgBtn').addEventListener('click',()=>document.getElementById('sendMsgOverlay').classList.remove('show'));
+  document.getElementById('sendMsgOverlay').addEventListener('click',(e)=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove('show'); });
+  document.getElementById('sendMsgWhatsapp').addEventListener('click',()=>{ const t=document.getElementById('sendMsgText').value; window.open('https://wa.me/'+frPhone(sendMsgCtx.phone)+'?text='+encodeURIComponent(t),'_blank'); });
+  document.getElementById('sendMsgSms').addEventListener('click',()=>{ const t=document.getElementById('sendMsgText').value; window.open('sms:'+(sendMsgCtx.phone||'')+'?&body='+encodeURIComponent(t),'_blank'); });
+  document.getElementById('sendMsgEmail').addEventListener('click',()=>{ const t=document.getElementById('sendMsgText').value; window.open('mailto:'+(sendMsgCtx.email||'')+'?subject='+encodeURIComponent(sendMsgCtx.subject)+'&body='+encodeURIComponent(t),'_blank'); });
+  document.getElementById('sendMsgCopy').addEventListener('click',()=>{ const t=document.getElementById('sendMsgText').value; if(navigator.clipboard) navigator.clipboard.writeText(t); showToast('Message copié'); });
+
+  // Prévenir le concierge d'une mission
+  function notifyConcierge(ev){
+    const p=findPrestaById(ev.prestaId); if(!p){ alert('Aucun prestataire assigné.'); return; }
+    const f=ev.propertyId?findPropertyById(ev.propertyId):null;
+    const lieu=f?(f.property.name?f.property.name+' — '+f.property.address:f.property.address):(ev.location||'');
+    const d=new Date(ev.date+'T00:00:00');
+    let msg='Bonjour '+p.name+',\n\nNouvelle mission :\n';
+    msg+='📅 '+capitalize(DAYS_FULL[d.getDay()])+' '+d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear()+(ev.time?' à '+ev.time:'')+'\n';
+    if(lieu) msg+='📍 '+lieu+'\n';
+    if(ev.details) msg+='📝 '+ev.details+'\n';
+    msg+='\nMerci de vous connecter pour accepter ou refuser :\n'+APP_LINK;
+    openSendModal({title:'Prévenir '+p.name, phone:p.phone, email:p.email, subject:'Nouvelle mission', message:msg});
+  }
+
+  // Message au voyageur (bienvenue / rappel départ)
+  function messageGuest(ev){
+    const f=ev.propertyId?findPropertyById(ev.propertyId):null;
+    const d0=f?(f.property.details||{}):{};
+    const nom=ev.guestName||'';
+    let msg;
+    if(ev.type==='depart'){
+      msg='Bonjour'+(nom?' '+nom:'')+',\n\nNous vous rappelons que votre départ est prévu le '+formatDateFR(ev.date)+(ev.arrivalTime?' à '+ev.arrivalTime:'')+'.\n';
+      if(d0.checkoutInstructions) msg+='\nÀ votre départ : '+d0.checkoutInstructions+'\n';
+      msg+='\nMerci pour votre séjour, nous vous souhaitons un bon retour !';
+    } else {
+      msg='Bonjour'+(nom?' '+nom:'')+',\n\nNous avons hâte de vous accueillir le '+formatDateFR(ev.date)+(ev.arrivalTime?' à partir de '+ev.arrivalTime:'')+'.\n';
+      if(f) msg+='📍 '+(f.property.address||'')+'\n';
+      if(d0.accessCode) msg+='🔑 Accès : '+d0.accessCode+'\n';
+      if(d0.wifiName) msg+='📶 WiFi : '+d0.wifiName+(d0.wifiPassword?' / '+d0.wifiPassword:'')+'\n';
+      if(d0.checkinInstructions) msg+='\n'+d0.checkinInstructions+'\n';
+      msg+='\nÀ très bientôt !';
+    }
+    openSendModal({title:'Message au voyageur', phone:ev.guestPhone, email:'', subject:(ev.type==='depart'?'Votre départ':'Votre arrivée'), message:msg});
+  }
+
   // ---------- Owners rendering ----------
   function renderOwners(){
     const container=document.getElementById('ownersContainer'); if(!container) return;
@@ -3441,6 +3617,11 @@
   function deleteExpense(id){ expenses=expenses.filter(x=>x.id!==id); saveExpenses(); }
 
   // ---------- Revenu d'un événement ----------
+  // ---------- Suivi des paiements ----------
+  function paymentKey(ownerId){ return ownerId+'__'+finPeriodValue(); }
+  function isPaid(ownerId){ const pm=settings.payments||{}; const e=pm[paymentKey(ownerId)]; return !!(e&&e.paid); }
+  function setPaid(ownerId, paid){ if(!settings.payments) settings.payments={}; const k=paymentKey(ownerId); if(paid) settings.payments[k]={paid:true,paidAt:Date.now()}; else delete settings.payments[k]; saveSettings(); }
+
   function eventRevenue(ev){
     let r=0;
     if(['arrivee','depart','service'].includes(ev.type)) r+=getEventPrice(ev);
@@ -3495,6 +3676,21 @@
     </div>`;
     html+=`<div style="font-size:0.82rem;color:var(--steel);margin:-10px 0 16px;">Période : <strong style="color:var(--ink);">${finPeriodLabel()}</strong> · Ménages ${formatPrice(caClean)} · Check-in/out ${formatPrice(caCico)}</div>`;
 
+    // Vue annuelle : mois par mois
+    if(finMode==='year'){
+      const yr=finPeriodValue().slice(0,4);
+      let rows='', anyM=false;
+      for(let mo=1;mo<=12;mo++){
+        const ym=yr+'-'+pad(mo);
+        const mev=events.filter(e=>(e.date||'').startsWith(ym));
+        let ca=0,cnt=0; mev.forEach(e=>{ ca+=eventRevenue(e); if(e.type==='service')cnt++; });
+        const dep=expenses.filter(x=>(x.date||'').startsWith(ym)).reduce((s,x)=>s+(Number(x.amount)||0),0);
+        if(ca===0&&dep===0&&cnt===0) continue; anyM=true;
+        rows+=`<tr><td>${capitalize(MONTHS[mo-1])}</td><td class="num">${cnt}</td><td class="num">${formatPrice(ca)}</td><td class="num" style="color:#A6432F;">${formatPrice(dep)}</td><td class="num" style="color:${ca-dep>=0?'#3F7350':'#A6432F'};">${formatPrice(ca-dep)}</td></tr>`;
+      }
+      if(anyM) html+=`<div class="fin-section"><h3>Mois par mois — ${yr}</h3><table class="fin-table"><thead><tr><th>Mois</th><th class="num">Missions</th><th class="num">CA</th><th class="num">Dépenses</th><th class="num">Net</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }
+
     // Par propriétaire
     const byOwner=new Map();
     evs.forEach(e=>{
@@ -3503,14 +3699,24 @@
       if(!byOwner.has(key)) byOwner.set(key,{revenue:0,count:0});
       const o=byOwner.get(key); o.revenue+=eventRevenue(e); if(e.type==='service') o.count++;
     });
-    html+=`<div class="fin-section"><h3>Par propriétaire</h3><table class="fin-table"><thead><tr><th>Propriétaire</th><th class="num">Missions</th><th class="num">CA</th><th></th></tr></thead><tbody>`;
-    if(byOwner.size===0){ html+=`<tr><td colspan="4" style="color:var(--steel);">Aucune donnée sur cette période.</td></tr>`; }
+    const monthMode=(finMode==='month');
+    let encaisse=0, resteDu=0;
+    html+=`<div class="fin-section"><h3>Par propriétaire</h3><table class="fin-table"><thead><tr><th>Propriétaire</th><th class="num">Missions</th><th class="num">CA</th>${monthMode?'<th>Paiement</th>':''}<th></th></tr></thead><tbody>`;
+    if(byOwner.size===0){ html+=`<tr><td colspan="5" style="color:var(--steel);">Aucune donnée sur cette période.</td></tr>`; }
     owners.forEach(o=>{
       const d=byOwner.get(o.id); if(!d) return;
-      html+=`<tr><td>${escapeHtml(o.name)}</td><td class="num">${d.count}</td><td class="num">${formatPrice(d.revenue)}</td><td class="num"><button class="btn btn-ghost on-light btn-sm" data-statement="${o.id}" style="padding:5px 10px;">🧾 Relevé</button></td></tr>`;
+      let payCell='';
+      if(monthMode){
+        const paid=isPaid(o.id);
+        if(paid) encaisse+=d.revenue; else resteDu+=d.revenue;
+        payCell=`<td><button class="btn btn-sm ${paid?'btn-primary':'btn-ghost on-light'}" data-paytoggle="${o.id}" style="padding:5px 10px;">${paid?'✓ Payé':'Non payé'}</button></td>`;
+      }
+      html+=`<tr><td>${escapeHtml(o.name)}</td><td class="num">${d.count}</td><td class="num">${formatPrice(d.revenue)}</td>${payCell}<td class="num"><button class="btn btn-ghost on-light btn-sm" data-statement="${o.id}" style="padding:5px 10px;">🧾 Relevé</button></td></tr>`;
     });
-    if(byOwner.has('__none__')){ const d=byOwner.get('__none__'); html+=`<tr><td style="color:var(--steel);">Sans propriétaire</td><td class="num">${d.count}</td><td class="num">${formatPrice(d.revenue)}</td><td></td></tr>`; }
-    html+=`</tbody></table></div>`;
+    if(byOwner.has('__none__')){ const d=byOwner.get('__none__'); html+=`<tr><td style="color:var(--steel);">Sans propriétaire</td><td class="num">${d.count}</td><td class="num">${formatPrice(d.revenue)}</td>${monthMode?'<td></td>':''}<td></td></tr>`; }
+    html+=`</tbody></table>`;
+    if(monthMode) html+=`<div style="display:flex;gap:18px;flex-wrap:wrap;padding:10px 12px;font-size:0.85rem;"><span>✓ Encaissé : <strong style="color:#3F7350;">${formatPrice(encaisse)}</strong></span><span>⏳ Reste dû : <strong style="color:#A6432F;">${formatPrice(resteDu)}</strong></span></div>`;
+    html+=`</div>`;
 
     // Par logement
     const byProp=new Map();
@@ -3535,6 +3741,7 @@
     c.innerHTML=html;
     c.querySelectorAll('[data-statement]').forEach(b=>b.addEventListener('click',()=>printOwnerStatement(b.dataset.statement)));
     c.querySelectorAll('[data-editexp]').forEach(b=>b.addEventListener('click',()=>openExpenseModal(expenses.find(x=>x.id===b.dataset.editexp))));
+    c.querySelectorAll('[data-paytoggle]').forEach(b=>b.addEventListener('click',()=>{ const oid=b.dataset.paytoggle; setPaid(oid, !isPaid(oid)); renderFinances(); }));
   }
 
   // ---------- Relevé propriétaire (impression) ----------
@@ -3682,7 +3889,7 @@
   }, 2000);
 
   // ---------- Vérification des mises à jour ----------
-  const APP_VERSION = 16; // bumpé à chaque déploiement
+  const APP_VERSION = 17; // bumpé à chaque déploiement
   function showUpdateBanner(){
     if(document.getElementById('updateBanner')) return;
     const b=document.createElement('div');
