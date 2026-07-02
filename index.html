@@ -1724,8 +1724,11 @@
     const body=document.createElement('div'); body.className='event-body';
     const tagClass='tag-'+(ev.type||'autre');
     let metaHtml='';
-    if(ev.location) metaHtml+=`<span>📍 ${escapeHtml(ev.location)}</span>`;
-    if(ev.propertyId){ const f=findPropertyById(ev.propertyId); if(f) metaHtml+=`<span>👤 ${escapeHtml(f.owner.name)}</span>`; }
+    const linked = ev.propertyId ? findPropertyById(ev.propertyId) : null;
+    if(linked && linked.property.name) metaHtml+=`<span>🏠 ${escapeHtml(linked.property.name)}</span>`;
+    const addr = linked ? linked.property.address : ev.location;
+    if(addr) metaHtml+=`<span>📍 ${escapeHtml(addr)}</span>`;
+    if(linked) metaHtml+=`<span>👤 ${escapeHtml(linked.owner.name)}</span>`;
     if(['arrivee','depart','service'].includes(ev.type)){
       const price=getEventPrice(ev);
       if(price>0||ev.price!=null){
@@ -3890,7 +3893,7 @@
   }, 2000);
 
   // ---------- Vérification des mises à jour ----------
-  const APP_VERSION = 18; // bumpé à chaque déploiement
+  const APP_VERSION = 19; // bumpé à chaque déploiement
   function showUpdateBanner(){
     if(document.getElementById('updateBanner')) return;
     const b=document.createElement('div');
